@@ -106,3 +106,4 @@ GROUP BY
     t.ticket_id, t.customer_id, c.name, c.email, t.subject, 
     cat.category_name, p.priority_name, s.status_name, s.is_closed,
     a.name, t.created_at, t.updated_at, t.resolved_at;
+

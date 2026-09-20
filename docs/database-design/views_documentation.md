@@ -124,3 +124,4 @@ GROUP BY
     3. **Consistency:** Centralizes business logic (such as calculating ticket age and SLA breach thresholds) directly inside the database, preventing discrepancies across different client interfaces.
 * **Q: Can you perform `INSERT` or `UPDATE` on these views?**
   * **Answer:** Generally, views containing aggregate functions (`COUNT`, `AVG`, `SUM`), `GROUP BY` clauses, or outer joins (`LEFT JOIN`) are non-updatable in MySQL because the DBMS cannot deterministically trace an aggregate modification back to a single base table row. These views are specifically designed for high-performance reporting and reading.
+
