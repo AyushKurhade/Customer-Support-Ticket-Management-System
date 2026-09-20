@@ -74,3 +74,4 @@ This document details the 6 stored procedures developed for the **Customer Suppo
     3. **Centralized Business Logic:** Business rules (e.g. auto-promoting status upon agent assignment) are enforced universally, regardless of which client or endpoint executes the action.
 * **Q: What is `SIGNAL SQLSTATE '45000'` in MySQL stored procedures?**
   * **Answer:** `SQLSTATE '45000'` is the ANSI SQL standard state code for an unhandled user-defined exception. It halts execution and sends a custom, human-readable error message back to the application.
+

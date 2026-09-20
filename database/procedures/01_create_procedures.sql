@@ -249,3 +249,4 @@ BEGIN
     ORDER BY p.sla_hours ASC, t.created_at ASC;
 END //
 DELIMITER ;
+
