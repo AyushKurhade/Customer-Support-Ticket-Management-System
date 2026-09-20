@@ -61,3 +61,4 @@ It integrates directly with database triggers to automatically generate an audit
   * **Answer:** Horizontal authorization is enforced in `get_my_tickets()` by scoping the SQL query with `WHERE t.customer_id = %s` using `session['user_id']`. In `get_ticket_details()`, an explicit ownership check compares `ticket['customer_id']` against `session['user_id']`; if mismatched, a `403 Forbidden` is returned.
 * **Q: Why are comments flagged with `is_internal`?**
   * **Answer:** `is_internal` is a boolean attribute that supports internal staff collaboration. Support agents and administrators can post diagnostic notes visible only to staff, while customer-facing comments have `is_internal = FALSE`. In `get_ticket_details()`, if `session['role'] == 'customer'`, the SQL query explicitly filters `WHERE is_internal = FALSE`, ensuring staff notes are never leaked to customers.
+

@@ -15,3 +15,4 @@ customer_bp.add_url_rule('/tickets', view_func=login_required(get_my_tickets), m
 customer_bp.add_url_rule('/tickets/<int:ticket_id>', view_func=login_required(get_ticket_details), methods=['GET'])
 customer_bp.add_url_rule('/tickets/<int:ticket_id>/comments', view_func=login_required(add_ticket_comment), methods=['POST'])
 customer_bp.add_url_rule('/tickets/<int:ticket_id>/close', view_func=login_required(close_my_ticket), methods=['POST'])
+

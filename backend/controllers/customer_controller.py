@@ -283,3 +283,4 @@ def close_my_ticket(ticket_id):
         return jsonify({'message': 'Ticket closed successfully.'}), 200
     except Exception as e:
         return jsonify({'error': f'Failed to close ticket: {str(e)}'}), 500
+

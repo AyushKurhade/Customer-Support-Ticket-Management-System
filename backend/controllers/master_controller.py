@@ -27,3 +27,4 @@ def get_statuses():
         "SELECT status_id, status_name, is_closed FROM Ticket_Status ORDER BY status_id ASC;"
     )
     return jsonify({'statuses': statuses}), 200
+
