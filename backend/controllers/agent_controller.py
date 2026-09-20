@@ -244,3 +244,4 @@ def add_agent_comment(ticket_id):
 
     except Exception as e:
         return jsonify({'error': f'Failed to add comment: {str(e)}'}), 500
+

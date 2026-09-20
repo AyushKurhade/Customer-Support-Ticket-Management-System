@@ -16,3 +16,4 @@ agent_bp.add_url_rule('/tickets/<int:ticket_id>', view_func=role_required(['agen
 agent_bp.add_url_rule('/tickets/<int:ticket_id>/status', view_func=role_required(['agent', 'admin'])(update_ticket_status), methods=['PUT'])
 agent_bp.add_url_rule('/tickets/<int:ticket_id>/resolve', view_func=role_required(['agent', 'admin'])(resolve_ticket), methods=['POST'])
 agent_bp.add_url_rule('/tickets/<int:ticket_id>/comments', view_func=role_required(['agent', 'admin'])(add_agent_comment), methods=['POST'])
+

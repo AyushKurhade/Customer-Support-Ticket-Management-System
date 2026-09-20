@@ -60,3 +60,4 @@ When an agent resolves a ticket via `/api/agent/tickets/<id>/resolve`:
   * **Answer:** By delegating resolution timestamping to the database trigger `trg_Ticket_Status_Resolved_Timestamp`. The trigger checks if `NEW.status_id` corresponds to `Resolved` and automatically assigns `NEW.resolved_at = NOW()`. Even if an update query does not pass a timestamp, the database engine enforces it at the storage layer.
 * **Q: Why does the agent queue sort by `p.sla_hours ASC, t.created_at ASC`?**
   * **Answer:** This implements **SLA-driven priority dispatching**. Tickets with tighter resolution deadlines (e.g. Critical 4h SLA) appear at the top of the queue before Medium (48h) or Low (72h) tickets, ensuring agents address high-urgency incidents first.
+
