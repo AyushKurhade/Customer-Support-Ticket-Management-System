@@ -23,3 +23,4 @@ reports_bp.add_url_rule('/resolution-time', view_func=role_required(['agent', 'a
 def export_csv():
     report_type = request.args.get('type', 'category').lower()
     return export_report_csv(report_type)
+

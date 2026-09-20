@@ -270,3 +270,4 @@ def export_report_csv(report_type):
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename=report_{report_type}.csv"}
     )
+
