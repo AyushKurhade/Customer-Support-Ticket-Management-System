@@ -120,3 +120,4 @@ We performed a complete lifecycle test on a single ticket:
     - `OLD`: Contains the original column values before the update or deletion. (Available in `UPDATE` and `DELETE`).
 * **Q: Why is audit logging implemented via Triggers rather than in application code?**
   * **Answer:** Guarantee of compliance and tamper resistance. If audit logging is in backend code, a developer writing a new script, direct SQL update, or batch migration might forget to call the audit log function. A database trigger intercepts *any* modification regardless of where the query originated.
+
