@@ -66,3 +66,4 @@ In MySQL, tables can use different storage engines. We explicitly declare `ENGIN
     - `CASCADE`: Deleting parent row automatically deletes all matching child rows (e.g., deleting a ticket purges its comments).
     - `RESTRICT`: Prevents deletion of the parent row if any referencing child row exists (e.g., cannot delete a customer while they have active tickets).
     - `SET NULL`: Deleting the parent row automatically sets the foreign key in child rows to `NULL` (e.g., deactivating an agent unassigns their tickets rather than deleting them).
+

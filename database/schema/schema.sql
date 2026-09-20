@@ -116,3 +116,4 @@ CREATE TABLE Ticket_Status_History (
     CONSTRAINT fk_history_changed_by FOREIGN KEY (changed_by) 
         REFERENCES Users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
