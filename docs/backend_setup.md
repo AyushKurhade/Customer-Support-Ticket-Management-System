@@ -63,3 +63,4 @@ The `/api/health` endpoint verifies that the Flask application and the MySQL dat
   * **Answer:** By enforcing parameterized queries throughout `backend/config/db.py` (e.g. `cursor.execute(sql, params)`). The database driver sends the query template and the parameter data in separate protocol packets; user input is treated strictly as data literals and can never be interpreted as executable SQL syntax.
 * **Q: Why was Flask selected over heavyweight frameworks like Django for this DBMS mini-project?**
   * **Answer:** Flask is minimalist and lightweight. Heavy frameworks like Django enforce their own Object-Relational Mapping (ORM) layer, which obscures raw SQL, views, triggers, and stored procedures behind Python classes. Flask allows us to write and expose transparent, raw SQL queries and stored procedure invocations directly, which is the primary objective of a college DBMS project.
+

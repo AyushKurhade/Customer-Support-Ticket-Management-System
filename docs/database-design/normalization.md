@@ -133,3 +133,4 @@ In `Tickets`, all non-key attributes depend directly on `ticket_id` and nothing 
   * **Answer:** A transitive dependency occurs when non-key attribute $A$ determines non-key attribute $B$ ($PK \rightarrow A \rightarrow B$). For instance, if `Tickets` had stored `category_name`, then `ticket_id -> category_id -> category_name`. We resolved this by extracting `Categories` into its own relation with primary key `category_id`, storing only the foreign key `category_id` in `Tickets`.
 * **Q: What is BCNF (Boyce-Codd Normal Form) and does your project satisfy it?**
   * **Answer:** A relation is in BCNF if for every functional dependency $X \rightarrow Y$, $X$ is a superkey. In all 7 relations in our project, every determinant is a superkey (either the primary key or a candidate key like `email` or `category_name`). Therefore, our database satisfies both 3NF and BCNF.
+

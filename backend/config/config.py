@@ -16,3 +16,4 @@ class Config:
     DB_NAME = os.getenv('DB_NAME', 'support_ticket_db')
     SECRET_KEY = os.getenv('SECRET_KEY', 'default-dev-secret-key')
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+

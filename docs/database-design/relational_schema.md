@@ -155,3 +155,4 @@ $$\text{Ticket\_Status\_History}(\underline{\mathbf{history\_id}}, \text{ticket\
     1. **Entity Integrity:** The primary key of a relation cannot contain NULL values and must uniquely identify each tuple.
     2. **Referential Integrity:** A foreign key in a referencing relation must either match a valid primary key value in the referenced relation or be NULL (if permitted).
     3. **Domain Integrity:** Every attribute value must conform to its declared data type, length, and check constraints (e.g., `role` must be one of `'customer'`, `'agent'`, `'admin'`).
+

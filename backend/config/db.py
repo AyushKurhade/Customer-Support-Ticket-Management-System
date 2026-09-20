@@ -95,3 +95,4 @@ def test_connection():
         return {'status': 'connected', 'info': info}
     except Exception as e:
         return {'status': 'error', 'error': str(e)}
+
