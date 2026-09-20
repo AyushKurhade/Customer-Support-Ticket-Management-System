@@ -51,3 +51,4 @@ To meet college DBMS mini-project standards, the technology stack was evaluated 
 1. **SQL Transparency**: We will use direct parameterized SQL queries and stored procedure execution via `mysql-connector-python`. Examiners want to see actual SQL, views, procedures, and triggers being triggered—not obscured behind heavy ORM abstractions.
 2. **Unified Backend & AI**: Because Flask is Python, our AI classifier (trained with scikit-learn) can be loaded directly into memory as a `.joblib` model and invoked in one line of code when creating a ticket. No separate AI servers, microservices, or external network requests are needed.
 3. **Rock-Solid Viva Defense**: Every piece is easy to trace: HTML form $\rightarrow$ Flask route $\rightarrow$ ML model prediction $\rightarrow$ MySQL Stored Procedure execution $\rightarrow$ Trigger execution $\rightarrow$ Status History log.
+
