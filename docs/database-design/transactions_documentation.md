@@ -98,3 +98,4 @@ END;
   * **Answer:** MySQL's InnoDB storage engine uses an **Undo Log**. When an `UPDATE` or `INSERT` runs inside a transaction, the before-image of the modified data is written to the undo log. If `ROLLBACK` is issued or an unhandled exception occurs, InnoDB reads the undo log in reverse to restore the exact original bytes on disk.
 * **Q: Why are transactions necessary for ticket reassignment in this system?**
   * **Answer:** Reassigning a ticket involves modifying the ticket row (`UPDATE Tickets`) and writing an internal handover note (`INSERT INTO Ticket_Comments`). If the network or server fails between these two statements, without a transaction the ticket would show a new agent but have zero explanation or audit history. Transactions ensure both operations succeed together or neither occurs.
+
