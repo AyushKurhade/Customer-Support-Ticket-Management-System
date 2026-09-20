@@ -79,3 +79,4 @@ This document records the formal verification results for Create, Read, Update, 
   * **Answer:** Because different referential actions were designed based on business rules:
     - `Categories` $\rightarrow$ `Tickets` uses `ON DELETE RESTRICT` to protect active tickets from losing their categorization and breaking reporting integrity.
     - `Tickets` $\rightarrow$ `Ticket_Comments` uses `ON DELETE CASCADE` because comments are subordinate to a ticket and have no valid business existence if the ticket is removed.
+

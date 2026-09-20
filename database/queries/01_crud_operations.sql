@@ -123,3 +123,4 @@ DELETE FROM Tickets WHERE ticket_id = @temp_ticket_id;
 
 -- Verify child comment was automatically deleted via ON DELETE CASCADE (should return 0 rows)
 SELECT * FROM Ticket_Comments WHERE ticket_id = @temp_ticket_id;
+
