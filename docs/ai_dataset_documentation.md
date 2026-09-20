@@ -112,3 +112,4 @@ In Phase 26, the dataset will be processed through an scikit-learn training pipe
 1. **Feature Extraction**: Text normalization, lowercasing, English stop-word removal, and n-gram TF-IDF vectorization (`ngram_range=(1, 2)`).
 2. **Model Training**: Multinomial Naive Bayes classifier ($P(c|d) \propto P(c) \prod P(w_k|c)$) for ultra-fast, lightweight text classification.
 3. **Artifact Persistence**: Serializing trained vectorizer and classifier using `joblib` into `ai/models/ticket_classifier.joblib`.
+
