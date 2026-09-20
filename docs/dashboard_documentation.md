@@ -63,3 +63,4 @@ Computed via a single high-efficiency SQL query with conditional aggregation:
   * **Answer:** **Database-Side Processing Efficiency.** Computing aggregations (`COUNT`, `SUM(CASE ...)`, `AVG(TIMESTAMPDIFF(...))`) directly inside the MySQL storage engine takes microseconds and transmits only a tiny summary payload over the network. If the database scales to 500,000 tickets, transferring all rows into Python memory would exhaust RAM and introduce unacceptable latency.
 * **Q: How does the dashboard leverage Database Views?**
   * **Answer:** The Agent Performance section queries `vw_AgentTicketSummary` directly. By querying the view instead of writing a complex 3-table join with conditional aggregations inside the Python script, the business logic remains centralized and consistent with external reporting queries.
+
