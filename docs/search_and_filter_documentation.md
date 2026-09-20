@@ -75,3 +75,4 @@ LIMIT %s OFFSET %s;
   * **Answer:** By dynamically assembling query conditions into a `where_clauses` list joined with `AND`, while simultaneously appending parameter values into a separate `params` tuple. The combined string is passed to `cursor.execute(sql, tuple(params))`, ensuring parameterized isolation regardless of how many filters are combined.
 * **Q: Why was `COLLATE utf8mb4_unicode_ci` used in the `fn_GetSLAStatus` filter?**
   * **Answer:** In MySQL, stored functions may evaluate character literals with default collation (`utf8mb4_general_ci`). Comparing a general collation literal to a table column or parameter typed with `utf8mb4_unicode_ci` causes error 1267 (*Illegal mix of collations*). Applying explicit collation coerces both operands to the identical Unicode collation sequence.
+
