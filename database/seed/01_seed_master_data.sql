@@ -53,3 +53,4 @@ INSERT INTO Users (name, email, password_hash, role, contact_number) VALUES
 ('Bob Martinez (Customer)', 'bob@customer.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'customer', '+1-555-0202'),
 ('Charlie Brown (Customer)', 'charlie@customer.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'customer', '+1-555-0203')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
+
