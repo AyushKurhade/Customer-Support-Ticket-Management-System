@@ -91,3 +91,4 @@ def get_model_info():
             'status': 'not_found',
             'message': 'Model metadata file not found. Train model first.'
         }), 404
+

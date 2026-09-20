@@ -156,9 +156,15 @@ def update_ticket_status(ticket_id):
     """
     data = request.get_json() or {}
     new_status_id = data.get('status_id')
+    status_name_input = data.get('status_name')
+
+    if not new_status_id and status_name_input:
+        st_lookup = execute_single("SELECT status_id FROM Ticket_Status WHERE LOWER(status_name) = LOWER(%s);", (status_name_input,))
+        if st_lookup:
+            new_status_id = st_lookup['status_id']
 
     if not new_status_id:
-        return jsonify({'error': 'status_id is required.'}), 400
+        return jsonify({'error': 'status_id or valid status_name is required.'}), 400
 
     # Validate that status exists
     status_row = execute_single("SELECT status_id, status_name FROM Ticket_Status WHERE status_id = %s;", (new_status_id,))
