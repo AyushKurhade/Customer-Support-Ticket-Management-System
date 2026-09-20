@@ -30,3 +30,4 @@ def role_required(allowed_roles):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+

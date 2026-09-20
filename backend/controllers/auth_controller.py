@@ -127,3 +127,4 @@ def get_current_user_profile():
         'authenticated': True,
         'user': user
     }), 200
+

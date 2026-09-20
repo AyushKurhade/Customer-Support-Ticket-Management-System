@@ -12,3 +12,4 @@ auth_bp.add_url_rule('/register', view_func=register_user, methods=['POST'])
 auth_bp.add_url_rule('/login', view_func=login_user, methods=['POST'])
 auth_bp.add_url_rule('/logout', view_func=logout_user, methods=['POST'])
 auth_bp.add_url_rule('/me', view_func=get_current_user_profile, methods=['GET'])
+

@@ -56,3 +56,4 @@ The **Authentication and User Management Module** handles secure user registrati
     - **Authorization:** Determining *what you are allowed to do* based on your role (e.g. verifying that only an `agent` can update ticket statuses or only an `admin` can access the performance dashboard).
 * **Q: How does the application verify that a registered user cannot choose an `admin` role?**
   * **Answer:** In `register_user()`, the `role` is hardcoded to `'customer'` in the SQL INSERT statement. Even if a malicious user injects `"role": "admin"` into the registration JSON payload, the backend ignores it. Furthermore, at the database level, the `CHECK (role IN ('customer', 'agent', 'admin'))` constraint guarantees that only valid enumerated roles exist.
+
