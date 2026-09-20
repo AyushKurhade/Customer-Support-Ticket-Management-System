@@ -234,3 +234,4 @@ flowchart LR
 > 2. **Covering Indexes**: Creating composite B-Tree indexes on `(status_id, category_id, created_at)` to satisfy dashboard queries directly from the index tree without table lookups.
 > 3. **Read Replicas**: Directing all analytical reporting and dashboard queries to read-only MySQL replicas, freeing up the primary master database strictly for writes and stored procedures.
 > 4. **Archival Strategy**: Moving closed tickets older than 2 years into an offline `Tickets_Archive` table.
+
