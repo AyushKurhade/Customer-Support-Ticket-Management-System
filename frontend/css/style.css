@@ -1,0 +1,150 @@
+/* ==========================================================================
+   Customer Support Ticket Management System - Custom Stylesheet
+   ========================================================================== */
+
+:root {
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #475569;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #06b6d4;
+    --bg-light: #f8fafc;
+    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+body {
+    background-color: var(--bg-light);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #1e293b;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.kpi-card {
+    border-left: 5px solid transparent;
+}
+
+.kpi-card.total { border-left-color: #2563eb; }
+.kpi-card.open { border-left-color: #06b6d4; }
+.kpi-card.in-progress { border-left-color: #f59e0b; }
+.kpi-card.resolved { border-left-color: #10b981; }
+.kpi-card.closed { border-left-color: #64748b; }
+.kpi-card.breached { border-left-color: #ef4444; }
+
+.kpi-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.kpi-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+/* Badges */
+.badge-status-open {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: 600;
+}
+
+.badge-status-in-progress {
+    background-color: #fef3c7;
+    color: #b45309;
+    font-weight: 600;
+}
+
+.badge-status-resolved {
+    background-color: #d1fae5;
+    color: #047857;
+    font-weight: 600;
+}
+
+.badge-status-closed {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-weight: 600;
+}
+
+.badge-prio-critical {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    font-weight: 700;
+}
+
+.badge-prio-high {
+    background-color: #ffedd5;
+    color: #c2410c;
+    font-weight: 600;
+}
+
+.badge-prio-medium {
+    background-color: #fef9c3;
+    color: #854d0e;
+    font-weight: 600;
+}
+
+.badge-prio-low {
+    background-color: #e2e8f0;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Charts */
+.chart-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+/* Tables */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #f8fafc;
+    color: #475569;
+}
+
+/* Timeline */
+.timeline-item {
+    padding-left: 20px;
+    position: relative;
+    border-left: 2px solid #cbd5e1;
+    padding-bottom: 15px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+}
