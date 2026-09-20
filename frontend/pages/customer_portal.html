@@ -429,32 +429,50 @@
         }
 
         async function predictTicketCategory() {
+            const subj = document.getElementById('ticketSubject').value.trim();
             const desc = document.getElementById('ticketDescription').value.trim();
             const resultBox = document.getElementById('aiSuggestResult');
-            if (!desc) {
-                alert('Please type some issue details in the description first.');
+            
+            if (!subj && !desc) {
+                alert('Please enter a subject or description first so AI can analyze the inquiry.');
                 return;
             }
 
             resultBox.classList.remove('d-none');
-            resultBox.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Analyzing text with AI Classifier...`;
+            resultBox.innerHTML = `<span class="spinner-border spinner-border-sm me-2 text-info"></span><span class="text-muted">Analyzing problem with Naive Bayes AI engine...</span>`;
 
             try {
-                const res = await API.post('/api/ai/predict-category', { text: desc });
-                if (res.category_name) {
-                    resultBox.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> AI Recommended: <strong>${res.category_name}</strong> (Confidence: ${Math.round((res.confidence || 0.85)*100)}%)`;
-                    // Auto-select category in dropdown if matched
+                const res = await API.post('/api/ai/predict-category', { subject: subj, description: desc });
+                if (res.success) {
+                    // Auto-select category
                     const catSelect = document.getElementById('ticketCategory');
-                    for (let opt of catSelect.options) {
-                        if (opt.text.toLowerCase() === res.category_name.toLowerCase()) {
-                            catSelect.value = opt.value;
-                            break;
-                        }
+                    if (res.category_id) {
+                        catSelect.value = res.category_id;
                     }
+
+                    // Auto-select priority
+                    const prioSelect = document.getElementById('ticketPriority');
+                    if (res.priority_id) {
+                        prioSelect.value = res.priority_id;
+                    }
+
+                    const catConf = Math.round(res.confidence * 100);
+                    const prioConf = Math.round((res.priority_confidence || 0.75) * 100);
+
+                    resultBox.innerHTML = `
+                        <div class="alert alert-success py-2 px-3 mb-0 small mt-2 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>
+                                <strong>AI Recommendation Applied:</strong>
+                                Category: <span class="badge bg-primary">${res.category_name}</span> (${catConf}% conf) &bull;
+                                Suggested Priority: <span class="badge bg-warning text-dark">${res.priority_name}</span> (${prioConf}% conf, ${res.sla_hours}h SLA)
+                            </div>
+                            <span class="text-success small fw-semibold"><i class="fa-solid fa-circle-check me-1"></i> Pre-selected</span>
+                        </div>
+                    `;
                 }
             } catch (err) {
-                // If AI endpoint not yet activated (prior to Phase 28), show informative fallback
-                resultBox.innerHTML = `<i class="fa-solid fa-info-circle me-1"></i> AI categorization engine will be trained in Phase 26 & connected in Phase 28.`;
+                resultBox.innerHTML = `<div class="text-danger small mt-1"><i class="fa-solid fa-triangle-exclamation me-1"></i> AI suggestion error: ${err.message}</div>`;
             }
         }
 

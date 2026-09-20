@@ -123,3 +123,4 @@ Real-world customer tickets contain typos, colloquial abbreviations, and noisy s
 
 #### Q4: How does this AI component interact with your MySQL database?
 > **Answer**: The AI component operates as an intelligent advisory layer. In **Phase 28**, an API endpoint (`/api/ai/predict-category`) receives the draft ticket text submitted from the frontend UI. The model predicts the category (e.g., `Hardware`) and priority (`High`). When the customer confirms and clicks submit, the Flask controller executes the stored procedure `sp_CreateTicket`, which writes the normalized foreign keys (`category_id`, `priority_id`, `status_id = 1`) into the MySQL `Tickets` table and triggers `trg_Ticket_Initial_History_Log`.
+
