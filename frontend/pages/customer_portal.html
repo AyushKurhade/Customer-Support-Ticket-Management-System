@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Portal — SupportDesk</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/customer_portal.html">
+                <i class="fa-solid fa-headset text-primary fs-4"></i>
+                <span>SupportDesk <small class="badge bg-success text-uppercase fs-6">Customer</small></span>
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-light small" id="customerBadge"><i class="fa-solid fa-user me-1"></i> Customer</span>
+                <button class="btn btn-outline-light btn-sm" onclick="API.logout()"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container py-4">
+
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h2 class="h3 fw-bold mb-1">My Support Tickets</h2>
+                <p class="text-muted mb-0">Track active inquiries, communicate with assigned support staff, or submit a new ticket</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTicketModal">
+                    <i class="fa-solid fa-circle-plus me-1"></i> Raise New Ticket
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4 col-12">
+                <div class="card p-3 kpi-card total">
+                    <div class="kpi-label">Total Submitted</div>
+                    <div class="kpi-value text-primary" id="kpiTotal">0</div>
+                    <small class="text-muted">All tickets created by you</small>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="card p-3 kpi-card in-progress">
+                    <div class="kpi-label">Active / In Progress</div>
+                    <div class="kpi-value text-warning" id="kpiActive">0</div>
+                    <small class="text-muted">Being handled by support</small>
+                </div>
+            </div>
+            <div class="col-md-4 col-6">
+                <div class="card p-3 kpi-card resolved">
+                    <div class="kpi-label">Resolved / Closed</div>
+                    <div class="kpi-value text-success" id="kpiResolved">0</div>
+                    <small class="text-muted">Completed tickets</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Filter & List Card -->
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" onclick="filterTickets('ALL', this)">All</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterTickets('Open', this)">Open</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterTickets('In Progress', this)">In Progress</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterTickets('Resolved', this)">Resolved</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterTickets('Closed', this)">Closed</button>
+                </div>
+                <div class="input-group input-group-sm" style="max-width: 280px;">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" class="form-control" id="ticketSearch" placeholder="Search my tickets..." onkeyup="searchTickets()">
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ticket #</th>
+                            <th>Subject</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>SLA</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsTableBody">
+                        <tr><td colspan="8" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading tickets...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal: Raise New Ticket -->
+    <div class="modal fade" id="newTicketModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-ticket me-2"></i>Create New Support Ticket</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="createTicketForm" onsubmit="handleCreateTicket(event)">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Subject / Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ticketSubject" placeholder="Brief summary of your issue" required>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ticketCategory" required>
+                                    <option value="">Select category...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Priority <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ticketPriority" required>
+                                    <option value="">Select priority...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0">Detailed Description <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-sm btn-outline-info" id="aiSuggestBtn" onclick="predictTicketCategory()">
+                                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Smart Category
+                                </button>
+                            </div>
+                            <textarea class="form-control" id="ticketDescription" rows="5" placeholder="Provide complete details, steps to reproduce, or error messages..." required></textarea>
+                            <div id="aiSuggestResult" class="small text-info mt-1 d-none"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="submitTicketBtn">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Submit Ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: View Ticket Conversation & Details -->
+    <div class="modal fade" id="viewTicketModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-1" id="modalTicketSubject">Ticket Details</h5>
+                        <small class="text-muted" id="modalTicketMeta"></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Original Issue Description -->
+                    <div class="card mb-4 bg-light border-0">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-secondary text-uppercase mb-2" style="font-size:0.75rem;">Initial Request</h6>
+                            <p class="mb-0 text-dark" id="modalTicketDesc" style="white-space: pre-wrap;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Conversation Thread -->
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-comments me-2"></i>Conversation History</h6>
+                    <div id="commentsTimeline" class="mb-4">
+                        <!-- Comments rendered here -->
+                    </div>
+
+                    <!-- Post Reply Form -->
+                    <div class="card border p-3">
+                        <h6 class="fw-bold text-dark mb-2">Add Reply / Message</h6>
+                        <form id="addCommentForm" onsubmit="handleAddComment(event)">
+                            <input type="hidden" id="modalTicketId">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="commentText" rows="3" placeholder="Type your response or follow-up question here..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm float-end" id="sendCommentBtn">
+                                <i class="fa-solid fa-reply me-1"></i> Send Reply
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- API Client -->
+    <script src="/static/js/api.js"></script>
+
+    <script>
+        let allTickets = [];
+        let currentFilter = 'ALL';
+        let categories = [];
+        let priorities = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Verify user session
+                const meRes = await API.get('/api/auth/me');
+                if (!meRes.user) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                document.getElementById('customerBadge').innerHTML = `<i class="fa-solid fa-user me-1"></i> ${meRes.user.name}`;
+
+                // Load master data
+                await loadMasterData();
+                // Load tickets
+                await loadTickets();
+            } catch (err) {
+                console.error(err);
+                window.location.href = '/login.html';
+            }
+        });
+
+        async function loadMasterData() {
+            try {
+                const [catRes, prioRes] = await Promise.all([
+                    API.get('/api/master/categories'),
+                    API.get('/api/master/priorities')
+                ]);
+
+                categories = catRes.categories || [];
+                priorities = prioRes.priorities || [];
+
+                const catSelect = document.getElementById('ticketCategory');
+                catSelect.innerHTML = '<option value="">Select category...</option>' +
+                    categories.map(c => `<option value="${c.category_id}">${c.category_name}</option>`).join('');
+
+                const prioSelect = document.getElementById('ticketPriority');
+                prioSelect.innerHTML = '<option value="">Select priority...</option>' +
+                    priorities.map(p => `<option value="${p.priority_id}">${p.priority_name} (${p.sla_hours}h SLA)</option>`).join('');
+            } catch (err) {
+                console.error('Failed to load master dropdowns:', err);
+            }
+        }
+
+        async function loadTickets() {
+            try {
+                const res = await API.get('/api/customer/tickets');
+                allTickets = res.tickets || [];
+                updateKPIs(allTickets);
+                renderTicketsTable();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('ticketsTableBody').innerHTML = 
+                    `<tr><td colspan="8" class="text-center text-danger py-4">Failed to load tickets: ${err.message}</td></tr>`;
+            }
+        }
+
+        function updateKPIs(tickets) {
+            const total = tickets.length;
+            const active = tickets.filter(t => ['Open', 'In Progress'].includes(t.status_name)).length;
+            const resolved = tickets.filter(t => ['Resolved', 'Closed'].includes(t.status_name)).length;
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiActive').textContent = active;
+            document.getElementById('kpiResolved').textContent = resolved;
+        }
+
+        function filterTickets(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderTicketsTable();
+        }
+
+        function searchTickets() {
+            renderTicketsTable();
+        }
+
+        function renderTicketsTable() {
+            const searchTerm = (document.getElementById('ticketSearch').value || '').toLowerCase();
+            let filtered = allTickets;
+
+            if (currentFilter !== 'ALL') {
+                filtered = filtered.filter(t => (t.status_name || '').toLowerCase() === currentFilter.toLowerCase());
+            }
+
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    (t.subject && t.subject.toLowerCase().includes(searchTerm)) ||
+                    (t.category_name && t.category_name.toLowerCase().includes(searchTerm)) ||
+                    String(t.ticket_id).includes(searchTerm)
+                );
+            }
+
+            const tbody = document.getElementById('ticketsTableBody');
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">No tickets found matching current view.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(t => {
+                const slaClass = t.sla_status === 'SLA BREACHED' || t.sla_status === 'RESOLVED LATE' ? 'text-danger fw-bold' : 'text-success';
+                return `
+                    <tr>
+                        <td class="fw-bold text-primary">#${t.ticket_id}</td>
+                        <td class="fw-semibold text-dark">${escapeHtml(t.subject)}</td>
+                        <td><span class="badge bg-light text-dark border">${t.category_name}</span></td>
+                        <td>${formatPriorityBadge(t.priority_name)}</td>
+                        <td>${formatStatusBadge(t.status_name)}</td>
+                        <td class="small text-muted">${formatDate(t.created_at)}</td>
+                        <td class="small ${slaClass}"><i class="fa-solid fa-clock me-1"></i>${t.sla_status || 'Within SLA'}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openTicketModal(${t.ticket_id})">
+                                <i class="fa-solid fa-comments me-1"></i> View Thread
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openTicketModal(ticketId) {
+            try {
+                const res = await API.get(`/api/customer/tickets/${ticketId}`);
+                const t = res.ticket;
+                const comments = res.comments || [];
+
+                document.getElementById('modalTicketId').value = t.ticket_id;
+                document.getElementById('modalTicketSubject').textContent = `#${t.ticket_id} - ${t.subject}`;
+                document.getElementById('modalTicketMeta').innerHTML = `
+                    Category: <strong>${t.category_name}</strong> | 
+                    Priority: <strong>${t.priority_name}</strong> | 
+                    Status: ${formatStatusBadge(t.status_name)} |
+                    Agent: <strong>${t.agent_name || 'Assigned to Support Team'}</strong>
+                `;
+                document.getElementById('modalTicketDesc').textContent = t.description;
+
+                // Render comments
+                renderComments(comments);
+
+                const modal = new bootstrap.Modal(document.getElementById('viewTicketModal'));
+                modal.show();
+            } catch (err) {
+                alert('Error loading ticket details: ' + err.message);
+            }
+        }
+
+        function renderComments(comments) {
+            const container = document.getElementById('commentsTimeline');
+            if (!comments.length) {
+                container.innerHTML = `<p class="text-muted small italic">No messages yet in this conversation.</p>`;
+                return;
+            }
+
+            container.innerHTML = comments.map(c => `
+                <div class="timeline-item mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-dark small"><i class="fa-solid fa-user-circle me-1 text-primary"></i>${c.author_name}</strong>
+                        <span class="text-muted" style="font-size:0.75rem;">${formatDate(c.created_at)}</span>
+                    </div>
+                    <div class="p-2 rounded bg-white border small text-dark" style="white-space: pre-wrap;">${escapeHtml(c.comment_text)}</div>
+                </div>
+            `).join('');
+        }
+
+        async function handleAddComment(e) {
+            e.preventDefault();
+            const ticketId = document.getElementById('modalTicketId').value;
+            const commentText = document.getElementById('commentText').value.trim();
+            const btn = document.getElementById('sendCommentBtn');
+
+            btn.disabled = true;
+            try {
+                await API.post(`/api/customer/tickets/${ticketId}/comments`, {
+                    comment_text: commentText
+                });
+                document.getElementById('commentText').value = '';
+                // Reload ticket details
+                await openTicketModal(ticketId);
+            } catch (err) {
+                alert('Failed to send reply: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function handleCreateTicket(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitTicketBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Submitting...`;
+
+            try {
+                const subject = document.getElementById('ticketSubject').value.trim();
+                const category_id = parseInt(document.getElementById('ticketCategory').value);
+                const priority_id = parseInt(document.getElementById('ticketPriority').value);
+                const description = document.getElementById('ticketDescription').value.trim();
+
+                await API.post('/api/customer/tickets', {
+                    subject,
+                    category_id,
+                    priority_id,
+                    description
+                });
+
+                // Reset & Close
+                document.getElementById('createTicketForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('newTicketModal')).hide();
+                await loadTickets();
+            } catch (err) {
+                alert('Failed to create ticket: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane me-1"></i> Submit Ticket`;
+            }
+        }
+
+        async function predictTicketCategory() {
+            const desc = document.getElementById('ticketDescription').value.trim();
+            const resultBox = document.getElementById('aiSuggestResult');
+            if (!desc) {
+                alert('Please type some issue details in the description first.');
+                return;
+            }
+
+            resultBox.classList.remove('d-none');
+            resultBox.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin me-1"></i> Analyzing text with AI Classifier...`;
+
+            try {
+                const res = await API.post('/api/ai/predict-category', { text: desc });
+                if (res.category_name) {
+                    resultBox.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> AI Recommended: <strong>${res.category_name}</strong> (Confidence: ${Math.round((res.confidence || 0.85)*100)}%)`;
+                    // Auto-select category in dropdown if matched
+                    const catSelect = document.getElementById('ticketCategory');
+                    for (let opt of catSelect.options) {
+                        if (opt.text.toLowerCase() === res.category_name.toLowerCase()) {
+                            catSelect.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+            } catch (err) {
+                // If AI endpoint not yet activated (prior to Phase 28), show informative fallback
+                resultBox.innerHTML = `<i class="fa-solid fa-info-circle me-1"></i> AI categorization engine will be trained in Phase 26 & connected in Phase 28.`;
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+            return (text || '').replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

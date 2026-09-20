@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Workspace — SupportDesk</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .comment-internal {
+            background-color: #fffbeb !important;
+            border: 1px solid #fef3c7 !important;
+            border-left: 4px solid #f59e0b !important;
+        }
+        .comment-public {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-left: 4px solid #3b82f6 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/agent_portal.html">
+                <i class="fa-solid fa-headset text-warning fs-4"></i>
+                <span>SupportDesk <small class="badge bg-warning text-dark text-uppercase fs-6">Agent Workspace</small></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#agentNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="agentNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/agent_portal.html"><i class="fa-solid fa-inbox me-1"></i> Ticket Queue</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports.html"><i class="fa-solid fa-chart-pie me-1"></i> Performance Reports</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-light small" id="agentBadge"><i class="fa-solid fa-user-tie me-1"></i> Agent</span>
+                    <button class="btn btn-outline-light btn-sm" onclick="API.logout()"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid px-4 py-4">
+
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h2 class="h3 fw-bold mb-1">Support Triage & Ticket Queue</h2>
+                <p class="text-muted mb-0">Manage customer tickets, respond with public advice, log internal staff notes, and resolve issues within SLA</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" onclick="loadAgentQueue()">
+                    <i class="fa-solid fa-rotate me-1"></i> Refresh Queue
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-sm-6">
+                <div class="card p-3 kpi-card total">
+                    <div class="kpi-label">Assigned To Me</div>
+                    <div class="kpi-value text-primary" id="kpiAssigned">0</div>
+                    <small class="text-muted">Active in your queue</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6">
+                <div class="card p-3 kpi-card in-progress">
+                    <div class="kpi-label">In Progress</div>
+                    <div class="kpi-value text-warning" id="kpiInProgress">0</div>
+                    <small class="text-muted">Under active investigation</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6">
+                <div class="card p-3 kpi-card resolved">
+                    <div class="kpi-label">Resolved By Me</div>
+                    <div class="kpi-value text-success" id="kpiResolved">0</div>
+                    <small class="text-muted">Successfully closed/resolved</small>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6">
+                <div class="card p-3 kpi-card breached">
+                    <div class="kpi-label">SLA Attention Needed</div>
+                    <div class="kpi-value text-danger" id="kpiBreached">0</div>
+                    <small class="text-muted">Breached or Warning SLA</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Table Card -->
+        <div class="card p-3 mb-4 shadow-sm">
+            <div class="row g-2 mb-3 align-items-center">
+                <div class="col-md-4 col-12">
+                    <div class="btn-group btn-group-sm w-100" role="group">
+                        <button type="button" class="btn btn-outline-secondary active" id="tabMyQueue" onclick="setQueueTab('my', this)">My Tickets</button>
+                        <button type="button" class="btn btn-outline-secondary" id="tabUnassigned" onclick="setQueueTab('unassigned', this)">Unassigned Pool</button>
+                        <button type="button" class="btn btn-outline-secondary" id="tabAll" onclick="setQueueTab('all', this)">All Tickets</button>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <select class="form-select form-select-sm" id="statusFilter" onchange="renderQueueTable()">
+                        <option value="ALL">All Statuses</option>
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+                <div class="col-md-2 col-6">
+                    <select class="form-select form-select-sm" id="priorityFilter" onchange="renderQueueTable()">
+                        <option value="ALL">All Priorities</option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3 col-12">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" class="form-control" id="queueSearch" placeholder="Search tickets..." onkeyup="renderQueueTable()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#ID</th>
+                            <th>Subject</th>
+                            <th>Customer</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>SLA</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agentQueueTableBody">
+                        <tr><td colspan="9" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading ticket queue...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal: Agent Ticket Workspace -->
+    <div class="modal fade" id="agentWorkspaceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-1" id="wsModalTitle">Ticket Workspace</h5>
+                        <small class="text-muted" id="wsModalMeta"></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Quick Action Bar -->
+                    <div class="card p-3 mb-4 bg-light border-0">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="fw-bold small text-secondary mb-0">Change Status:</label>
+                                <select class="form-select form-select-sm" id="wsStatusSelect" style="width: 170px;">
+                                    <option value="Open">Open</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Resolved">Resolved</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                                <button class="btn btn-primary btn-sm" onclick="saveStatusChange()">Update</button>
+                            </div>
+                            <div>
+                                <button class="btn btn-success btn-sm" onclick="quickResolveTicket()">
+                                    <i class="fa-solid fa-circle-check me-1"></i> Mark as Resolved
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Info & Initial Description -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card p-3 h-100 border">
+                                <h6 class="fw-bold text-secondary text-uppercase small mb-2"><i class="fa-solid fa-address-card me-1"></i> Customer Profile</h6>
+                                <p class="mb-1 fw-semibold text-dark" id="wsCustomerName">-</p>
+                                <p class="mb-1 text-muted small" id="wsCustomerEmail">-</p>
+                                <p class="mb-0 text-muted small" id="wsCustomerPhone">-</p>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card p-3 h-100 border">
+                                <h6 class="fw-bold text-secondary text-uppercase small mb-2"><i class="fa-solid fa-file-lines me-1"></i> Problem Description</h6>
+                                <p class="mb-0 text-dark" id="wsDescription" style="white-space: pre-wrap; font-size: 0.95rem;"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thread & Notes -->
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-comments me-2"></i>Communication Thread & Staff Notes</h6>
+                    <div id="wsCommentsContainer" class="mb-4"></div>
+
+                    <!-- Add Reply or Internal Note -->
+                    <div class="card border p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-dark mb-0">Add Communication</h6>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="wsIsInternalSwitch">
+                                <label class="form-check-label small fw-semibold text-warning" for="wsIsInternalSwitch">
+                                    <i class="fa-solid fa-lock me-1"></i> Private Internal Staff Note
+                                </label>
+                            </div>
+                        </div>
+                        <textarea class="form-control mb-3" id="wsCommentInput" rows="3" placeholder="Write response to customer, or toggle above to record private internal note..."></textarea>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-primary btn-sm" id="wsSendBtn" onclick="submitAgentComment()">
+                                <i class="fa-solid fa-paper-plane me-1"></i> Post Message
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- API Client -->
+    <script src="/static/js/api.js"></script>
+
+    <script>
+        let currentAgent = null;
+        let allTickets = [];
+        let currentQueueTab = 'my';
+        let activeTicketId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const meRes = await API.get('/api/auth/me');
+                if (!meRes.user || !['agent', 'admin'].includes(meRes.user.role.toLowerCase())) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                currentAgent = meRes.user;
+                document.getElementById('agentBadge').innerHTML = `<i class="fa-solid fa-user-tie me-1"></i> ${currentAgent.name}`;
+
+                await loadAgentQueue();
+            } catch (err) {
+                console.error(err);
+                window.location.href = '/login.html';
+            }
+        });
+
+        async function loadAgentQueue() {
+            try {
+                // Fetch assigned tickets
+                const res = await API.get('/api/agent/tickets');
+                allTickets = res.tickets || [];
+
+                updateAgentKPIs();
+                renderQueueTable();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('agentQueueTableBody').innerHTML = 
+                    `<tr><td colspan="9" class="text-center text-danger py-4">Failed to load queue: ${err.message}</td></tr>`;
+            }
+        }
+
+        function updateAgentKPIs() {
+            const assigned = allTickets.filter(t => t.assigned_agent_id === currentAgent.user_id).length;
+            const inProg = allTickets.filter(t => t.assigned_agent_id === currentAgent.user_id && t.status_name === 'In Progress').length;
+            const resolved = allTickets.filter(t => t.assigned_agent_id === currentAgent.user_id && ['Resolved', 'Closed'].includes(t.status_name)).length;
+            const breached = allTickets.filter(t => ['SLA BREACHED', 'SLA WARNING', 'RESOLVED LATE'].includes(t.sla_status)).length;
+
+            document.getElementById('kpiAssigned').textContent = assigned;
+            document.getElementById('kpiInProgress').textContent = inProg;
+            document.getElementById('kpiResolved').textContent = resolved;
+            document.getElementById('kpiBreached').textContent = breached;
+        }
+
+        function setQueueTab(tab, btn) {
+            currentQueueTab = tab;
+            document.querySelectorAll('#tabMyQueue, #tabUnassigned, #tabAll').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderQueueTable();
+        }
+
+        function renderQueueTable() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const searchTerm = (document.getElementById('queueSearch').value || '').toLowerCase();
+
+            let filtered = allTickets;
+
+            // Tab filtering
+            if (currentQueueTab === 'my') {
+                filtered = filtered.filter(t => t.assigned_agent_id === currentAgent.user_id);
+            } else if (currentQueueTab === 'unassigned') {
+                filtered = filtered.filter(t => !t.assigned_agent_id);
+            }
+
+            // Status filter
+            if (statusFilter !== 'ALL') {
+                filtered = filtered.filter(t => (t.status_name || '').toLowerCase() === statusFilter.toLowerCase());
+            }
+
+            // Priority filter
+            if (priorityFilter !== 'ALL') {
+                filtered = filtered.filter(t => (t.priority_name || '').toLowerCase() === priorityFilter.toLowerCase());
+            }
+
+            // Search
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    (t.subject && t.subject.toLowerCase().includes(searchTerm)) ||
+                    (t.customer_name && t.customer_name.toLowerCase().includes(searchTerm)) ||
+                    String(t.ticket_id).includes(searchTerm)
+                );
+            }
+
+            const tbody = document.getElementById('agentQueueTableBody');
+            if (!filtered.length) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-muted">No tickets found for selected criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(t => {
+                const slaClass = t.sla_status === 'SLA BREACHED' || t.sla_status === 'RESOLVED LATE' ? 'text-danger fw-bold' : 'text-success';
+                const isMine = t.assigned_agent_id === currentAgent.user_id;
+
+                return `
+                    <tr>
+                        <td class="fw-bold text-primary">#${t.ticket_id}</td>
+                        <td class="fw-semibold text-dark">${escapeHtml(t.subject)}</td>
+                        <td class="small">${escapeHtml(t.customer_name || 'Customer')}</td>
+                        <td><span class="badge bg-light text-dark border">${t.category_name}</span></td>
+                        <td>${formatPriorityBadge(t.priority_name)}</td>
+                        <td>${formatStatusBadge(t.status_name)}</td>
+                        <td class="small text-muted">${formatDate(t.created_at)}</td>
+                        <td class="small ${slaClass}"><i class="fa-solid fa-clock me-1"></i>${t.sla_status || 'Within SLA'}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openAgentWorkspace(${t.ticket_id})">
+                                <i class="fa-solid fa-folder-open me-1"></i> Workspace
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openAgentWorkspace(ticketId) {
+            try {
+                activeTicketId = ticketId;
+                const res = await API.get(`/api/agent/tickets/${ticketId}`);
+                const t = res.ticket;
+                const comments = res.comments || [];
+
+                document.getElementById('wsModalTitle').textContent = `#${t.ticket_id} - ${t.subject}`;
+                document.getElementById('wsModalMeta').innerHTML = `
+                    Priority: <strong>${t.priority_name}</strong> |
+                    Category: <strong>${t.category_name}</strong> |
+                    Status: ${formatStatusBadge(t.status_name)} |
+                    SLA Target: <strong>${t.sla_hours || 24}h</strong>
+                `;
+                document.getElementById('wsCustomerName').textContent = t.customer_name || 'Unknown';
+                document.getElementById('wsCustomerEmail').textContent = t.customer_email || 'No email provided';
+                document.getElementById('wsCustomerPhone').textContent = `Phone: ${t.customer_phone || 'N/A'}`;
+                document.getElementById('wsDescription').textContent = t.description;
+
+                // Sync status dropdown
+                document.getElementById('wsStatusSelect').value = t.status_name;
+
+                // Render comments
+                renderAgentComments(comments);
+
+                const modal = new bootstrap.Modal(document.getElementById('agentWorkspaceModal'));
+                modal.show();
+            } catch (err) {
+                alert('Failed to load ticket details: ' + err.message);
+            }
+        }
+
+        function renderAgentComments(comments) {
+            const container = document.getElementById('wsCommentsContainer');
+            if (!comments.length) {
+                container.innerHTML = `<p class="text-muted small italic">No comments or notes recorded yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = comments.map(c => {
+                const isInternal = c.is_internal === 1 || c.is_internal === true;
+                const cardClass = isInternal ? 'comment-internal' : 'comment-public';
+                const tag = isInternal 
+                    ? `<span class="badge bg-warning text-dark"><i class="fa-solid fa-lock me-1"></i>Internal Staff Note</span>` 
+                    : `<span class="badge bg-primary">Public Reply</span>`;
+
+                return `
+                    <div class="card p-3 mb-3 ${cardClass}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong class="text-dark small me-2"><i class="fa-solid fa-user-circle me-1"></i>${c.author_name} (${c.author_role})</strong>
+                                ${tag}
+                            </div>
+                            <span class="text-muted" style="font-size:0.75rem;">${formatDate(c.created_at)}</span>
+                        </div>
+                        <div class="small text-dark" style="white-space: pre-wrap;">${escapeHtml(c.comment_text)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function saveStatusChange() {
+            if (!activeTicketId) return;
+            const newStatus = document.getElementById('wsStatusSelect').value;
+
+            try {
+                await API.put(`/api/agent/tickets/${activeTicketId}/status`, {
+                    status_name: newStatus
+                });
+                alert('Ticket status updated successfully!');
+                await loadAgentQueue();
+                await openAgentWorkspace(activeTicketId);
+            } catch (err) {
+                alert('Failed to update status: ' + err.message);
+            }
+        }
+
+        async function quickResolveTicket() {
+            if (!activeTicketId) return;
+            if (!confirm('Are you sure you want to mark this ticket as RESOLVED?')) return;
+
+            try {
+                await API.post(`/api/agent/tickets/${activeTicketId}/resolve`, {
+                    resolution_summary: 'Resolved by assigned agent via workspace portal.'
+                });
+                alert('Ticket resolved successfully! SLA resolution timestamp recorded.');
+                await loadAgentQueue();
+                await openAgentWorkspace(activeTicketId);
+            } catch (err) {
+                alert('Failed to resolve ticket: ' + err.message);
+            }
+        }
+
+        async function submitAgentComment() {
+            if (!activeTicketId) return;
+            const text = document.getElementById('wsCommentInput').value.trim();
+            const isInternal = document.getElementById('wsIsInternalSwitch').checked;
+            const btn = document.getElementById('wsSendBtn');
+
+            if (!text) {
+                alert('Please type a comment or note first.');
+                return;
+            }
+
+            btn.disabled = true;
+            try {
+                await API.post(`/api/agent/tickets/${activeTicketId}/comments`, {
+                    comment_text: text,
+                    is_internal: isInternal
+                });
+                document.getElementById('wsCommentInput').value = '';
+                document.getElementById('wsIsInternalSwitch').checked = false;
+                await openAgentWorkspace(activeTicketId);
+            } catch (err) {
+                alert('Failed to post comment: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+            return (text || '').replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>

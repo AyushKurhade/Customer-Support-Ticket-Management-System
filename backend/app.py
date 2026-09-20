@@ -13,6 +13,7 @@ from backend.routes.agent_routes import agent_bp
 from backend.routes.admin_routes import admin_bp
 from backend.routes.search_routes import search_bp
 from backend.routes.dashboard_routes import dashboard_bp
+from backend.routes.reports_routes import reports_bp
 
 # Custom JSON Provider to cleanly serialize dates, timestamps, and decimals
 class CustomJSONProvider(DefaultJSONProvider):
@@ -46,6 +47,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(reports_bp)
 
     # Health check route
     @app.route('/api/health', methods=['GET'])

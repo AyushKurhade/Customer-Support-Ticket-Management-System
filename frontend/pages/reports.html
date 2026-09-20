@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytical Reports — SupportDesk</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        @media print {
+            .navbar, .btn, .nav-pills, .no-print {
+                display: none !important;
+            }
+            .card {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/admin_dashboard.html">
+                <i class="fa-solid fa-headset text-primary fs-4"></i>
+                <span>SupportDesk <small class="badge bg-primary text-uppercase fs-6">Reports</small></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#reportsNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="reportsNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin_dashboard.html"><i class="fa-solid fa-chart-line me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/agent_portal.html"><i class="fa-solid fa-inbox me-1"></i> Agent Queue</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/reports.html"><i class="fa-solid fa-file-lines me-1"></i> Reports</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-light small" id="staffBadge"><i class="fa-solid fa-user-shield me-1"></i> Staff</span>
+                    <button class="btn btn-outline-light btn-sm" onclick="API.logout()"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid px-4 py-4">
+
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h2 class="h3 fw-bold mb-1">Analytical & Operational Reports</h2>
+                <p class="text-muted mb-0">Multi-dimensional operational audit, SLA compliance rates, resolution efficiency, and agent scorecards</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="btnDownloadCsv" onclick="downloadCurrentCsv()">
+                    <i class="fa-solid fa-file-csv me-1"></i> Export to CSV
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                    <i class="fa-solid fa-print me-1"></i> Print / PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Report Tabs Navigation -->
+        <ul class="nav nav-pills mb-4 p-1 bg-white rounded-3 shadow-sm" id="reportTabs">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" onclick="switchReport('category', this)">
+                    <i class="fa-solid fa-layer-group me-1"></i> By Category
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" onclick="switchReport('status', this)">
+                    <i class="fa-solid fa-spinner me-1"></i> Status Lifecycle
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" onclick="switchReport('priority', this)">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Priority & SLA
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" onclick="switchReport('agents', this)">
+                    <i class="fa-solid fa-users-gear me-1"></i> Agent Scorecard
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" onclick="switchReport('resolution', this)">
+                    <i class="fa-solid fa-stopwatch me-1"></i> Resolution Time
+                </button>
+            </li>
+        </ul>
+
+        <!-- Dynamic Report Title & KPI Strip -->
+        <div id="reportKpiContainer" class="row g-3 mb-4"></div>
+
+        <!-- Table Card -->
+        <div class="card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0" id="reportTitle">Category Analysis Report</h5>
+                <span class="text-muted small" id="reportRecordCount">0 records</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="reportTable">
+                    <thead class="table-light" id="reportTableHead"></thead>
+                    <tbody id="reportTableBody">
+                        <tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading report data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- API Client -->
+    <script src="/static/js/api.js"></script>
+
+    <script>
+        let currentReportType = 'category';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const meRes = await API.get('/api/auth/me');
+                if (!meRes.user || !['agent', 'admin'].includes(meRes.user.role.toLowerCase())) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                document.getElementById('staffBadge').innerHTML = `<i class="fa-solid fa-user-shield me-1"></i> ${meRes.user.name} (${meRes.user.role})`;
+
+                await loadReport('category');
+            } catch (err) {
+                console.error(err);
+                window.location.href = '/login.html';
+            }
+        });
+
+        function switchReport(type, btn) {
+            currentReportType = type;
+            document.querySelectorAll('#reportTabs .nav-link').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadReport(type);
+        }
+
+        async function loadReport(type) {
+            const thead = document.getElementById('reportTableHead');
+            const tbody = document.getElementById('reportTableBody');
+            const title = document.getElementById('reportTitle');
+            const kpis = document.getElementById('reportKpiContainer');
+
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading report...</td></tr>`;
+
+            try {
+                if (type === 'category') {
+                    title.textContent = 'Tickets by Category & SLA Breaches';
+                    const res = await API.get('/api/reports/category');
+                    const rows = res.report_data || [];
+                    const summary = res.summary || {};
+
+                    // Render KPIs
+                    kpis.innerHTML = `
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card total"><div class="kpi-label">Total Tickets</div><div class="kpi-value text-primary">${summary.total_tickets || 0}</div></div></div>
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card in-progress"><div class="kpi-label">Active / Pending</div><div class="kpi-value text-warning">${summary.active_tickets || 0}</div></div></div>
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card resolved"><div class="kpi-label">Resolved / Closed</div><div class="kpi-value text-success">${summary.resolved_tickets || 0}</div></div></div>
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card breached"><div class="kpi-label">SLA Breached</div><div class="kpi-value text-danger">${summary.breached_tickets || 0}</div></div></div>
+                    `;
+
+                    thead.innerHTML = `
+                        <tr>
+                            <th>#</th>
+                            <th>Category Name</th>
+                            <th>Total Tickets</th>
+                            <th>Active</th>
+                            <th>Resolved</th>
+                            <th>Avg Resolution Time</th>
+                            <th>SLA Breached</th>
+                        </tr>
+                    `;
+
+                    document.getElementById('reportRecordCount').textContent = `${rows.length} Categories`;
+
+                    tbody.innerHTML = rows.map((r, i) => `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td class="fw-semibold text-dark">${r.category_name}</td>
+                            <td class="fw-bold">${r.total_tickets}</td>
+                            <td><span class="badge bg-warning text-dark">${r.active_tickets}</span></td>
+                            <td><span class="badge bg-success">${r.resolved_tickets}</span></td>
+                            <td>${r.avg_resolution_hours ? `${r.avg_resolution_hours} hrs` : '<span class="text-muted">N/A</span>'}</td>
+                            <td class="${r.breached_tickets > 0 ? 'text-danger fw-bold' : 'text-muted'}">${r.breached_tickets}</td>
+                        </tr>
+                    `).join('');
+
+                } else if (type === 'status') {
+                    title.textContent = 'Ticket Status & Lifecycle Distribution';
+                    const res = await API.get('/api/reports/status');
+                    const rows = res.report_data || [];
+
+                    kpis.innerHTML = '';
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Status ID</th>
+                            <th>Status Name</th>
+                            <th>Total Volume</th>
+                            <th>System Share (%)</th>
+                            <th>Oldest Active Ticket</th>
+                        </tr>
+                    `;
+
+                    document.getElementById('reportRecordCount').textContent = `${rows.length} Statuses`;
+
+                    tbody.innerHTML = rows.map(r => `
+                        <tr>
+                            <td>#${r.status_id}</td>
+                            <td>${formatStatusBadge(r.status_name)}</td>
+                            <td class="fw-bold">${r.total_tickets}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar" style="width: ${r.percentage || 0}%"></div>
+                                    </div>
+                                    <span class="small fw-semibold">${r.percentage || 0}%</span>
+                                </div>
+                            </td>
+                            <td>${r.oldest_ticket_hours ? `${r.oldest_ticket_hours} hrs ago` : '<span class="text-muted">None</span>'}</td>
+                        </tr>
+                    `).join('');
+
+                } else if (type === 'priority') {
+                    title.textContent = 'Priority & SLA Target Compliance';
+                    const res = await API.get('/api/reports/priority');
+                    const rows = res.report_data || [];
+
+                    kpis.innerHTML = '';
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Priority</th>
+                            <th>SLA Target</th>
+                            <th>Total Volume</th>
+                            <th>Resolved</th>
+                            <th>Avg Resolution</th>
+                            <th>Breached</th>
+                            <th>SLA Compliance</th>
+                        </tr>
+                    `;
+
+                    document.getElementById('reportRecordCount').textContent = `${rows.length} Priorities`;
+
+                    tbody.innerHTML = rows.map(r => {
+                        const comp = r.sla_compliance_pct != null ? r.sla_compliance_pct : 100;
+                        const compColor = comp >= 80 ? 'text-success' : (comp >= 60 ? 'text-warning' : 'text-danger');
+                        return `
+                            <tr>
+                                <td>${formatPriorityBadge(r.priority_name)}</td>
+                                <td class="fw-semibold">${r.sla_hours} hours</td>
+                                <td class="fw-bold">${r.total_tickets}</td>
+                                <td><span class="badge bg-success">${r.resolved_tickets}</span></td>
+                                <td>${r.avg_resolution_hours ? `${r.avg_resolution_hours} hrs` : '<span class="text-muted">N/A</span>'}</td>
+                                <td class="${r.breached_tickets > 0 ? 'text-danger fw-bold' : 'text-muted'}">${r.breached_tickets}</td>
+                                <td class="fw-bold ${compColor}"><i class="fa-solid fa-shield-halved me-1"></i>${comp}%</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                } else if (type === 'agents') {
+                    title.textContent = 'Support Agent Performance & Scorecard';
+                    const res = await API.get('/api/reports/agents');
+                    const rows = res.report_data || [];
+
+                    kpis.innerHTML = '';
+                    thead.innerHTML = `
+                        <tr>
+                            <th>Agent Name</th>
+                            <th>Email</th>
+                            <th>Assigned</th>
+                            <th>Pending</th>
+                            <th>Resolved</th>
+                            <th>Avg Resolution</th>
+                            <th>SLA Compliance</th>
+                        </tr>
+                    `;
+
+                    document.getElementById('reportRecordCount').textContent = `${rows.length} Agents`;
+
+                    tbody.innerHTML = rows.map(r => {
+                        const comp = r.sla_compliance_pct != null ? r.sla_compliance_pct : 100;
+                        const compColor = comp >= 80 ? 'text-success' : 'text-danger';
+                        return `
+                            <tr>
+                                <td class="fw-semibold text-dark"><i class="fa-solid fa-user-tie me-2 text-primary"></i>${r.agent_name}</td>
+                                <td class="text-muted small">${r.email}</td>
+                                <td class="fw-bold">${r.assigned_tickets}</td>
+                                <td><span class="badge bg-warning text-dark">${r.pending_tickets}</span></td>
+                                <td><span class="badge bg-success">${r.resolved_tickets}</span></td>
+                                <td>${r.avg_resolution_hours ? `${r.avg_resolution_hours} hrs` : '<span class="text-muted">N/A</span>'}</td>
+                                <td class="fw-bold ${compColor}">${comp}%</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                } else if (type === 'resolution') {
+                    title.textContent = 'Resolution Time Distribution & Detailed Log';
+                    const res = await API.get('/api/reports/resolution-time');
+                    const dist = res.distribution || {};
+                    const rows = res.resolved_tickets || [];
+
+                    kpis.innerHTML = `
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card open"><div class="kpi-label">&lt; 4 Hours</div><div class="kpi-value text-info">${dist.under_4_hours || 0}</div></div></div>
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card in-progress"><div class="kpi-label">4 - 24 Hours</div><div class="kpi-value text-warning">${dist.hours_4_to_24 || 0}</div></div></div>
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card resolved"><div class="kpi-label">24 - 48 Hours</div><div class="kpi-value text-primary">${dist.hours_24_to_48 || 0}</div></div></div>
+                        <div class="col-md-3 col-6"><div class="card p-3 kpi-card closed"><div class="kpi-label">&gt; 48 Hours</div><div class="kpi-value text-secondary">${dist.over_48_hours || 0}</div></div></div>
+                    `;
+
+                    thead.innerHTML = `
+                        <tr>
+                            <th>#ID</th>
+                            <th>Subject</th>
+                            <th>Category</th>
+                            <th>Customer</th>
+                            <th>Agent</th>
+                            <th>Resolution Time</th>
+                            <th>SLA Target</th>
+                            <th>SLA Status</th>
+                        </tr>
+                    `;
+
+                    document.getElementById('reportRecordCount').textContent = `${rows.length} Resolved Tickets`;
+
+                    tbody.innerHTML = rows.map(r => {
+                        const slaClass = r.sla_status === 'RESOLVED ON TIME' ? 'text-success' : 'text-danger fw-bold';
+                        return `
+                            <tr>
+                                <td class="fw-bold text-primary">#${r.ticket_id}</td>
+                                <td class="fw-semibold text-dark">${r.subject}</td>
+                                <td><span class="badge bg-light text-dark border">${r.category_name}</span></td>
+                                <td class="small">${r.customer_name}</td>
+                                <td class="small">${r.agent_name}</td>
+                                <td class="fw-bold">${r.resolution_hours} hrs</td>
+                                <td class="small text-muted">${r.sla_hours} hrs</td>
+                                <td class="small ${slaClass}"><i class="fa-solid fa-clock me-1"></i>${r.sla_status}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Failed to load report: ${err.message}</td></tr>`;
+            }
+        }
+
+        function downloadCurrentCsv() {
+            window.location.href = `/api/reports/export?type=${currentReportType}`;
+        }
+    </script>
+</body>
+</html>
