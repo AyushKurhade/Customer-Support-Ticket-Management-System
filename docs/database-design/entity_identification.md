@@ -129,3 +129,4 @@ Ticket_Status    ──(1:N)──► Ticket_Status_History (as old_status & new
   * **Answer:** Both customers and agents share identical core identity properties (name, email, password, authentication logic). Splitting them into duplicate tables violates the DRY principle and forces redundant tables. Distinguishing them via a `role` attribute with a `CHECK (role IN ('customer', 'agent', 'admin'))` constraint is standard 3NF practice and models role-based specialization cleanly.
 * **Q: Why use `ON DELETE RESTRICT` for `customer_id` on `Tickets`, but `ON DELETE CASCADE` for `Tickets` on `Ticket_Comments`?**
   * **Answer:** A customer who has active tickets must never be silently deleted, as doing so destroys historical support audit data (`RESTRICT`). Conversely, if a ticket is legitimately purged, its comments and history logs have no independent meaning and should be cleaned up automatically (`CASCADE`).
+
