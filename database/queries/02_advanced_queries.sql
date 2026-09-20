@@ -211,3 +211,4 @@ WHERE t.ticket_id IN (
       AND resolved_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
 )
 ORDER BY t.resolved_at DESC;
+

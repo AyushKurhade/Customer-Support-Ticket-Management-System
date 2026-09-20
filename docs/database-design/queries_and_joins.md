@@ -128,3 +128,4 @@ ORDER BY t.resolved_at DESC;
   * **Answer:** An `INNER JOIN` only returns rows where keys match in both tables. If a category currently has zero tickets or an agent has zero assigned tickets, an `INNER JOIN` would omit them entirely. A `LEFT JOIN` retains all master categories and all agents, returning `0` or `NULL` for missing child rows, ensuring accurate and complete reporting.
 * **Q: What is a Subquery and when is it preferred?**
   * **Answer:** A subquery is a nested `SELECT` statement enclosed in parentheses whose result is consumed by an outer query. Subqueries are preferred for multi-stage filtering, existence checks (`EXISTS` / `IN`), and temporary derived tables without creating persistent views.
+

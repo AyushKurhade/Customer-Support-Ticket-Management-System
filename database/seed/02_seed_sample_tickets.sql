@@ -85,3 +85,4 @@ VALUES
 (1, (SELECT user_id FROM Users WHERE email = 'sarah.agent@support.com'), 'Configured 5GHz AP channel separation. Please test again.', FALSE),
 (2, (SELECT user_id FROM Users WHERE email = 'sarah.agent@support.com'), 'Reissued password reset token and sent directly to registered email.', FALSE),
 (3, (SELECT user_id FROM Users WHERE email = 'john.agent@support.com'), 'Scheduled hardware desk visit with replacement display cables.', FALSE);
+
