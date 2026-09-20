@@ -98,3 +98,4 @@ stateDiagram-v2
   * **Answer:** Using a normalized `Ticket_Status` master table with foreign key constraints prevents typos (e.g., `"in_progress"` vs `"In Progress"`), ensures referential integrity, and allows clean state machine constraints.
 * **Q: How does the workflow guarantee that audit history is never forgotten by developers?**
   * **Answer:** Instead of relying on application code to remember to insert into an audit table, a database-level `AFTER UPDATE` trigger intercepts every status change and records it into `Ticket_Status_History` atomically.
+
