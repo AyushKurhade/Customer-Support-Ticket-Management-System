@@ -55,3 +55,4 @@ All Admin endpoints are strictly guarded by `@role_required(['admin'])`. Non-adm
   * **Answer:** Encapsulation and consistency. Stored procedure `sp_AssignTicket` enforces database-level validation (verifying that the assigned user actually holds the `agent` role and that the ticket exists), advances the status machine atomically from `Open` to `In Progress`, and ensures business rules cannot be bypassed by external scripts.
 * **Q: How does the Admin Module manage master reference data dynamically without code changes?**
   * **Answer:** By providing endpoints (`/api/admin/categories` and `/api/admin/priorities/<id>`) that modify the underlying normalized master tables (`Categories`, `Priorities`). When an admin creates a new category (e.g. "Cloud Infrastructure"), it immediately appears in all customer ticket forms and AI category mapping tables without restarting the server or editing code.
+

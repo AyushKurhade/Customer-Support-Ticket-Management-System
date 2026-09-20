@@ -272,3 +272,4 @@ def update_priority_sla(priority_id):
         }), 200
     except Exception as e:
         return jsonify({'error': f'Failed to update priority SLA: {str(e)}'}), 500
+

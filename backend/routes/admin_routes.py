@@ -20,3 +20,4 @@ admin_bp.add_url_rule('/tickets/<int:ticket_id>/assign', view_func=role_required
 admin_bp.add_url_rule('/tickets/<int:ticket_id>/priority', view_func=role_required(['admin'])(change_ticket_priority), methods=['PUT'])
 admin_bp.add_url_rule('/categories', view_func=role_required(['admin'])(create_category), methods=['POST'])
 admin_bp.add_url_rule('/priorities/<int:priority_id>', view_func=role_required(['admin'])(update_priority_sla), methods=['PUT'])
+
