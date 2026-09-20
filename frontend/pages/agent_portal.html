@@ -186,7 +186,10 @@
                                 </select>
                                 <button class="btn btn-primary btn-sm" onclick="saveStatusChange()">Update</button>
                             </div>
-                            <div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-success btn-sm" id="wsClaimBtn" onclick="claimActiveTicket()">
+                                    <i class="fa-solid fa-hand-holding-hand me-1"></i> Take / Claim Ticket
+                                </button>
                                 <button class="btn btn-success btn-sm" onclick="quickResolveTicket()">
                                     <i class="fa-solid fa-circle-check me-1"></i> Mark as Resolved
                                 </button>
@@ -354,7 +357,8 @@
                         <td>${formatStatusBadge(t.status_name)}</td>
                         <td class="small text-muted">${formatDate(t.created_at)}</td>
                         <td class="small ${slaClass}"><i class="fa-solid fa-clock me-1"></i>${t.sla_status || 'Within SLA'}</td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
+                            ${!t.assigned_agent_id ? `<button class="btn btn-sm btn-success me-1" onclick="claimTicket(${t.ticket_id})"><i class="fa-solid fa-hand-holding-hand me-1"></i> Claim</button>` : ''}
                             <button class="btn btn-sm btn-outline-primary" onclick="openAgentWorkspace(${t.ticket_id})">
                                 <i class="fa-solid fa-folder-open me-1"></i> Workspace
                             </button>
@@ -364,12 +368,34 @@
             }).join('');
         }
 
+        async function claimTicket(ticketId) {
+            try {
+                const res = await API.post(`/api/agent/tickets/${ticketId}/claim`, {});
+                alert(res.message || 'Ticket claimed successfully!');
+                await loadAgentQueue();
+            } catch (err) {
+                alert('Failed to claim ticket: ' + err.message);
+            }
+        }
+
+        async function claimActiveTicket() {
+            if (!activeTicketId) return;
+            await claimTicket(activeTicketId);
+            await openAgentWorkspace(activeTicketId);
+        }
+
         async function openAgentWorkspace(ticketId) {
             try {
                 activeTicketId = ticketId;
                 const res = await API.get(`/api/agent/tickets/${ticketId}`);
                 const t = res.ticket;
                 const comments = res.comments || [];
+
+                // Toggle claim button in modal
+                const claimBtn = document.getElementById('wsClaimBtn');
+                if (claimBtn) {
+                    claimBtn.style.display = (!t.assigned_agent_id || t.assigned_agent_id !== currentAgent.user_id) ? 'inline-block' : 'none';
+                }
 
                 document.getElementById('wsModalTitle').textContent = `#${t.ticket_id} - ${t.subject}`;
                 document.getElementById('wsModalMeta').innerHTML = `

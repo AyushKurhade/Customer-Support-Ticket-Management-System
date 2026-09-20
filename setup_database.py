@@ -159,3 +159,4 @@ print("  python -m backend.app")
 print("\nThen open your browser at:")
 print("  http://localhost:5000/")
 print("=" * 70)
+

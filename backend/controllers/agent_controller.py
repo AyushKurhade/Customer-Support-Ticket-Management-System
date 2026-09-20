@@ -1,5 +1,5 @@
 from flask import request, jsonify, session
-from backend.config.db import execute_query, execute_single, execute_dml
+from backend.config.db import execute_query, execute_single, execute_dml, call_stored_procedure
 
 def get_assigned_tickets():
     """
@@ -39,9 +39,17 @@ def get_assigned_tickets():
         JOIN Categories cat ON t.category_id = cat.category_id
         JOIN Priorities p ON t.priority_id = p.priority_id
         JOIN Ticket_Status s ON t.status_id = s.status_id
-        WHERE t.assigned_agent_id = %s
     """
-    params = [agent_id]
+    scope = request.args.get('scope', 'all')
+    if scope == 'mine':
+        sql += " WHERE t.assigned_agent_id = %s"
+        params = [agent_id]
+    elif scope == 'unassigned':
+        sql += " WHERE t.assigned_agent_id IS NULL"
+        params = []
+    else:
+        sql += " WHERE (t.assigned_agent_id = %s OR t.assigned_agent_id IS NULL)"
+        params = [agent_id]
 
     if status_id:
         sql += " AND t.status_id = %s"
@@ -250,4 +258,39 @@ def add_agent_comment(ticket_id):
 
     except Exception as e:
         return jsonify({'error': f'Failed to add comment: {str(e)}'}), 500
+
+def claim_ticket(ticket_id):
+    """
+    Support Agent claims / picks up an unassigned ticket.
+    Invokes Stored Procedure sp_AssignTicket to assign it to the agent
+    and automatically advance the ticket status from 'Open' to 'In Progress'.
+    """
+    agent_id = session.get('user_id')
+    if not agent_id:
+        return jsonify({'error': 'Authentication required.'}), 401
+
+    ticket = execute_single("SELECT ticket_id, status_id FROM Tickets WHERE ticket_id = %s;", (ticket_id,))
+    if not ticket:
+        return jsonify({'error': 'Ticket not found.'}), 404
+
+    try:
+        # Call Stored Procedure sp_AssignTicket (ticket_id, agent_id, assigned_by)
+        call_stored_procedure('sp_AssignTicket', (ticket_id, agent_id, agent_id))
+
+        # Add internal audit comment
+        execute_dml(
+            "INSERT INTO Ticket_Comments (ticket_id, user_id, comment_text, is_internal) VALUES (%s, %s, %s, TRUE);",
+            (ticket_id, agent_id, "Ticket picked up and claimed by support agent.")
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Ticket #{ticket_id} claimed successfully and moved to In Progress.',
+            'ticket_id': ticket_id,
+            'assigned_agent_id': agent_id
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Failed to claim ticket: {str(e)}'}), 500
+
 
