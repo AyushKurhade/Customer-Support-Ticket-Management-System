@@ -116,3 +116,4 @@ The trained pipeline bundle is saved via `joblib`:
 > 2. **Complete Data Privacy**: Customer complaints, account details, and billing numbers remain strictly on-premise inside the system perimeter.
 > 3. **Mathematical Explainability**: Bayes theorem allows full introspection of word log-likelihoods, satisfying academic evaluation standards.
 > 4. **High Accuracy on Technical Domain Text**: Technical support vocabulary is highly specific (e.g. *HDMI, BSOD, VPN, SSO, Stripe, deadlock*), allowing linear Bayesian classifiers to achieve optimal separation.
+
