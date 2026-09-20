@@ -146,3 +146,4 @@ LIMIT 5;
   * **Answer:** Use a **Function** when you need to calculate and return a scalar value that will be embedded directly inside `SELECT`, `WHERE`, or `ORDER BY` clauses (such as formatting timestamps, computing SLA compliance tags, or deriving mathematical scores). Use a **Procedure** when executing operations that perform table mutations (`INSERT`, `UPDATE`, `DELETE`), return multiple result sets, or require transactions.
 * **Q: Why are `DETERMINISTIC` and `READS SQL DATA` declared on these functions?**
   * **Answer:** In MySQL, specifying `READS SQL DATA` informs the storage engine that the function reads database rows without modifying them. `DETERMINISTIC` tells the query optimizer whether the function consistently produces identical output given identical inputs, enabling execution caching and binary log safety.
+
