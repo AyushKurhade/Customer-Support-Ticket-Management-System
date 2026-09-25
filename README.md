@@ -310,6 +310,51 @@ Charts can be used to display ticket status distribution, category-wise ticket c
 
 ---
 
+
+
+## 🖥️ Screenshots
+
+### 🖼️ Screen 01 — Project Landing Page
+![Screen 01](frontend/assets/s1.png)
+
+### 🖼️ Screen 02 — Role-Specific Portals & System Architecture
+![Screen 02](frontend/assets/s2.png)
+
+### 🖼️ Screen 03 — User Login
+![Screen 03](frontend/assets/s3.png)
+
+### 🖼️ Screen 04 — My Support Tickets
+![Screen 04](frontend/assets/s4.png)
+
+### 🖼️ Screen 05 — Create New Support Ticket
+![Screen 05](frontend/assets/s5.png)
+
+### 🖼️ Screen 06 — Ticket Category & Priority Selection
+![Screen 06](frontend/assets/s6.png)
+
+### 🖼️ Screen 07 — Ticket Description & AI Classification
+![Screen 07](frontend/assets/s7.png)
+
+### 🖼️ Screen 08 — Agent Workspace & My Tickets
+![Screen 08](frontend/assets/s8.png)
+
+### 🖼️ Screen 09 — Unassigned Ticket Queue
+![Screen 09](frontend/assets/s9.png)
+
+### 🖼️ Screen 10 — Analytical & Operational Reports
+![Screen 10](frontend/assets/s10.png)
+
+### 🖼️ Screen 11 — Admin Support Operations Dashboard
+![Screen 11](frontend/assets/s11.png)
+
+### 🖼️ Screen 12 — Dashboard Analytics & Agent Performance
+![Screen 12](frontend/assets/s12.png)
+
+### 🖼️ Screen 13 — Dashboard Analytics & Recent Tickets
+![Screen 13](frontend/assets/s13.png)
+
+---
+
 ## ⚙️ Installation and Setup
 
 Follow these steps to run the project locally.
