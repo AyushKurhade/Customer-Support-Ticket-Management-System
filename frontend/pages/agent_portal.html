@@ -70,32 +70,53 @@
 
         <!-- KPI Cards -->
         <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
                 <div class="card p-3 kpi-card total">
-                    <div class="kpi-label">Assigned To Me</div>
-                    <div class="kpi-value text-primary" id="kpiAssigned">0</div>
-                    <small class="text-muted">Active in your queue</small>
+                    <div class="kpi-label">Total Tickets</div>
+                    <div class="kpi-value text-primary" id="kpiTotal">0</div>
+                    <small class="text-muted">All system tickets</small>
                 </div>
             </div>
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
+                <div class="card p-3 kpi-card open">
+                    <div class="kpi-label">Open Tickets</div>
+                    <div class="kpi-value text-info" id="kpiOpen">0</div>
+                    <small class="text-muted">Awaiting assignment</small>
+                </div>
+            </div>
+            <div class="col-xl col-md-4 col-sm-6">
                 <div class="card p-3 kpi-card in-progress">
                     <div class="kpi-label">In Progress</div>
                     <div class="kpi-value text-warning" id="kpiInProgress">0</div>
-                    <small class="text-muted">Under active investigation</small>
+                    <small class="text-muted">Under investigation</small>
                 </div>
             </div>
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
                 <div class="card p-3 kpi-card resolved">
-                    <div class="kpi-label">Resolved By Me</div>
+                    <div class="kpi-label">Resolved Tickets</div>
                     <div class="kpi-value text-success" id="kpiResolved">0</div>
-                    <small class="text-muted">Successfully closed/resolved</small>
+                    <small class="text-muted">Solution provided</small>
                 </div>
             </div>
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl col-md-4 col-sm-6">
+                <div class="card p-3 kpi-card closed">
+                    <div class="kpi-label">Closed Tickets</div>
+                    <div class="kpi-value text-secondary" id="kpiClosed">0</div>
+                    <small class="text-muted">Archived & completed</small>
+                </div>
+            </div>
+            <div class="col-xl col-md-4 col-sm-6">
+                <div class="card p-3 kpi-card total">
+                    <div class="kpi-label">Assigned Tickets</div>
+                    <div class="kpi-value text-primary" id="kpiAssigned">0</div>
+                    <small class="text-muted" id="kpiMyAssignedSubtext">Assigned to agents</small>
+                </div>
+            </div>
+            <div class="col-xl col-md-4 col-sm-6">
                 <div class="card p-3 kpi-card breached">
-                    <div class="kpi-label">SLA Attention Needed</div>
-                    <div class="kpi-value text-danger" id="kpiBreached">0</div>
-                    <small class="text-muted">Breached or Warning SLA</small>
+                    <div class="kpi-label">Unassigned Tickets</div>
+                    <div class="kpi-value text-danger" id="kpiUnassigned">0</div>
+                    <small class="text-muted">Available in pool</small>
                 </div>
             </div>
         </div>
@@ -188,7 +209,7 @@
                             </div>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-outline-success btn-sm" id="wsClaimBtn" onclick="claimActiveTicket()">
-                                    <i class="fa-solid fa-hand-holding-hand me-1"></i> Take / Claim Ticket
+                                    <i class="fa-solid fa-user-check me-1"></i> Assign to Me
                                 </button>
                                 <button class="btn btn-success btn-sm" onclick="quickResolveTicket()">
                                     <i class="fa-solid fa-circle-check me-1"></i> Mark as Resolved
@@ -276,7 +297,7 @@
                 const res = await API.get('/api/agent/tickets');
                 allTickets = res.tickets || [];
 
-                updateAgentKPIs();
+                await updateAgentKPIs(res.kpis || res.stats);
                 renderQueueTable();
             } catch (err) {
                 console.error(err);
@@ -285,16 +306,28 @@
             }
         }
 
-        function updateAgentKPIs() {
-            const assigned = allTickets.filter(t => t.assigned_agent_id === currentAgent.user_id).length;
-            const inProg = allTickets.filter(t => t.assigned_agent_id === currentAgent.user_id && t.status_name === 'In Progress').length;
-            const resolved = allTickets.filter(t => t.assigned_agent_id === currentAgent.user_id && ['Resolved', 'Closed'].includes(t.status_name)).length;
-            const breached = allTickets.filter(t => ['SLA BREACHED', 'SLA WARNING', 'RESOLVED LATE'].includes(t.sla_status)).length;
+        async function updateAgentKPIs(serverKpis) {
+            try {
+                let kpis = serverKpis;
+                if (!kpis) {
+                    const dashRes = await API.get('/api/dashboard/stats');
+                    kpis = dashRes.kpis || {};
+                }
 
-            document.getElementById('kpiAssigned').textContent = assigned;
-            document.getElementById('kpiInProgress').textContent = inProg;
-            document.getElementById('kpiResolved').textContent = resolved;
-            document.getElementById('kpiBreached').textContent = breached;
+                if (document.getElementById('kpiTotal')) document.getElementById('kpiTotal').textContent = kpis.total_tickets ?? 0;
+                if (document.getElementById('kpiOpen')) document.getElementById('kpiOpen').textContent = kpis.open_tickets ?? 0;
+                if (document.getElementById('kpiInProgress')) document.getElementById('kpiInProgress').textContent = kpis.in_progress_tickets ?? 0;
+                if (document.getElementById('kpiResolved')) document.getElementById('kpiResolved').textContent = kpis.resolved_tickets ?? 0;
+                if (document.getElementById('kpiClosed')) document.getElementById('kpiClosed').textContent = kpis.closed_tickets ?? 0;
+                if (document.getElementById('kpiAssigned')) document.getElementById('kpiAssigned').textContent = kpis.assigned_tickets ?? 0;
+                if (document.getElementById('kpiUnassigned')) document.getElementById('kpiUnassigned').textContent = kpis.unassigned_tickets ?? 0;
+                if (document.getElementById('kpiBreached')) document.getElementById('kpiBreached').textContent = kpis.sla_breached_count ?? 0;
+                if (document.getElementById('kpiMyAssignedSubtext') && kpis.my_assigned_tickets !== undefined) {
+                    document.getElementById('kpiMyAssignedSubtext').textContent = `Assigned to me: ${kpis.my_assigned_tickets}`;
+                }
+            } catch (err) {
+                console.error('Failed to update agent KPIs:', err);
+            }
         }
 
         function setQueueTab(tab, btn) {
@@ -358,7 +391,7 @@
                         <td class="small text-muted">${formatDate(t.created_at)}</td>
                         <td class="small ${slaClass}"><i class="fa-solid fa-clock me-1"></i>${t.sla_status || 'Within SLA'}</td>
                         <td class="text-end text-nowrap">
-                            ${!t.assigned_agent_id ? `<button class="btn btn-sm btn-success me-1" onclick="claimTicket(${t.ticket_id})"><i class="fa-solid fa-hand-holding-hand me-1"></i> Claim</button>` : ''}
+                            ${!t.assigned_agent_id ? `<button class="btn btn-sm btn-success me-1" onclick="claimTicket(${t.ticket_id})"><i class="fa-solid fa-user-check me-1"></i> Assign to Me</button>` : ''}
                             <button class="btn btn-sm btn-outline-primary" onclick="openAgentWorkspace(${t.ticket_id})">
                                 <i class="fa-solid fa-folder-open me-1"></i> Workspace
                             </button>
@@ -371,10 +404,14 @@
         async function claimTicket(ticketId) {
             try {
                 const res = await API.post(`/api/agent/tickets/${ticketId}/claim`, {});
-                alert(res.message || 'Ticket claimed successfully!');
+                alert(res.message || 'Ticket assigned to you successfully!');
                 await loadAgentQueue();
+                const myTabBtn = document.getElementById('tabMyQueue');
+                if (myTabBtn) {
+                    setQueueTab('my', myTabBtn);
+                }
             } catch (err) {
-                alert('Failed to claim ticket: ' + err.message);
+                alert('Failed to assign ticket: ' + err.message);
             }
         }
 

@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, session
 from backend.config.db import execute_query, execute_single
 
 def get_dashboard_statistics():
@@ -10,11 +10,12 @@ def get_dashboard_statistics():
     kpi_sql = """
         SELECT 
             COUNT(t.ticket_id) AS total_tickets,
-            SUM(CASE WHEN s.status_name = 'Open' THEN 1 ELSE 0 END) AS open_tickets,
-            SUM(CASE WHEN s.status_name = 'In Progress' THEN 1 ELSE 0 END) AS in_progress_tickets,
-            SUM(CASE WHEN s.status_name = 'Resolved' THEN 1 ELSE 0 END) AS resolved_tickets,
-            SUM(CASE WHEN s.status_name = 'Closed' THEN 1 ELSE 0 END) AS closed_tickets,
-            SUM(CASE WHEN t.assigned_agent_id IS NULL AND s.is_closed = FALSE THEN 1 ELSE 0 END) AS unassigned_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'open' THEN 1 ELSE 0 END) AS open_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'in progress' THEN 1 ELSE 0 END) AS in_progress_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'resolved' THEN 1 ELSE 0 END) AS resolved_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'closed' THEN 1 ELSE 0 END) AS closed_tickets,
+            SUM(CASE WHEN t.assigned_agent_id IS NOT NULL THEN 1 ELSE 0 END) AS assigned_tickets,
+            SUM(CASE WHEN t.assigned_agent_id IS NULL THEN 1 ELSE 0 END) AS unassigned_tickets,
             SUM(CASE WHEN s.is_closed = FALSE AND TIMESTAMPDIFF(HOUR, t.created_at, NOW()) > p.sla_hours THEN 1 ELSE 0 END) AS sla_breached_count
         FROM Tickets t
         JOIN Ticket_Status s ON t.status_id = s.status_id
@@ -22,9 +23,22 @@ def get_dashboard_statistics():
     """
     kpis = execute_single(kpi_sql) or {
         'total_tickets': 0, 'open_tickets': 0, 'in_progress_tickets': 0,
-        'resolved_tickets': 0, 'closed_tickets': 0, 'unassigned_tickets': 0,
-        'sla_breached_count': 0
+        'resolved_tickets': 0, 'closed_tickets': 0, 'assigned_tickets': 0,
+        'unassigned_tickets': 0, 'sla_breached_count': 0
     }
+
+    agent_id = session.get('user_id')
+    agent_kpis = {}
+    if agent_id:
+        agent_kpi_sql = """
+            SELECT 
+                SUM(CASE WHEN t.assigned_agent_id = %s THEN 1 ELSE 0 END) AS my_assigned_tickets,
+                SUM(CASE WHEN t.assigned_agent_id = %s AND LOWER(s.status_name) = 'in progress' THEN 1 ELSE 0 END) AS my_in_progress_tickets,
+                SUM(CASE WHEN t.assigned_agent_id = %s AND LOWER(s.status_name) IN ('resolved', 'closed') THEN 1 ELSE 0 END) AS my_resolved_tickets
+            FROM Tickets t
+            JOIN Ticket_Status s ON t.status_id = s.status_id;
+        """
+        agent_kpis = execute_single(agent_kpi_sql, (agent_id, agent_id, agent_id)) or {}
 
     # 2. Average Resolution Time
     avg_sql = """
@@ -123,8 +137,12 @@ def get_dashboard_statistics():
             'in_progress_tickets': int(kpis.get('in_progress_tickets') or 0),
             'resolved_tickets': int(kpis.get('resolved_tickets') or 0),
             'closed_tickets': int(kpis.get('closed_tickets') or 0),
+            'assigned_tickets': int(kpis.get('assigned_tickets') or 0),
             'unassigned_tickets': int(kpis.get('unassigned_tickets') or 0),
             'sla_breached_count': int(kpis.get('sla_breached_count') or 0),
+            'my_assigned_tickets': int(agent_kpis.get('my_assigned_tickets') or 0),
+            'my_in_progress_tickets': int(agent_kpis.get('my_in_progress_tickets') or 0),
+            'my_resolved_tickets': int(agent_kpis.get('my_resolved_tickets') or 0),
             'avg_resolution_hours': float(res_stats.get('avg_resolution_hours') or 0),
             'min_resolution_hours': float(res_stats.get('min_resolution_hours') or 0),
             'max_resolution_hours': float(res_stats.get('max_resolution_hours') or 0),

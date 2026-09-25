@@ -175,12 +175,12 @@ ON DUPLICATE KEY UPDATE is_closed = VALUES(is_closed);
 -- Stored using PBKDF2:SHA256 standard password hash
 -- -----------------------------------------------------------------------------
 INSERT INTO Users (name, email, password_hash, role, contact_number) VALUES
-('System Administrator', 'admin@support.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'admin', '+1-555-0100'),
-('Sarah Jenkins (Agent)', 'sarah.agent@support.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'agent', '+1-555-0101'),
-('John Davis (Agent)', 'john.agent@support.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'agent', '+1-555-0102'),
-('Alice Morgan (Customer)', 'alice@customer.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'customer', '+1-555-0201'),
-('Bob Martinez (Customer)', 'bob@customer.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'customer', '+1-555-0202'),
-('Charlie Brown (Customer)', 'charlie@customer.com', 'pbkdf2:sha256:1000000$i9BnxsIFt1MTeepe$493f48408d3e011ea2ed0fd6889c862d8d82f22679a397bb0e9ca5ae0ff54653', 'customer', '+1-555-0203')
+('System Administrator', 'admin@support.com', 'scrypt:32768:8:1$Pb8NZvSQxLvgp5dI$5081986e47877e18988a62f6bbec2d4362f34d37ad31d683715ebc34ef48933f9ce2f3b1fc645dcec1461f7510f79bbc2f80ec4425ee961dc1c5220bcc5a0b2b', 'admin', '+1-555-0100'),
+('Sarah Jenkins (Agent)', 'sarah.agent@support.com', 'scrypt:32768:8:1$Pb8NZvSQxLvgp5dI$5081986e47877e18988a62f6bbec2d4362f34d37ad31d683715ebc34ef48933f9ce2f3b1fc645dcec1461f7510f79bbc2f80ec4425ee961dc1c5220bcc5a0b2b', 'agent', '+1-555-0101'),
+('John Davis (Agent)', 'john.agent@support.com', 'scrypt:32768:8:1$Pb8NZvSQxLvgp5dI$5081986e47877e18988a62f6bbec2d4362f34d37ad31d683715ebc34ef48933f9ce2f3b1fc645dcec1461f7510f79bbc2f80ec4425ee961dc1c5220bcc5a0b2b', 'agent', '+1-555-0102'),
+('Alice Morgan (Customer)', 'alice@customer.com', 'scrypt:32768:8:1$Pb8NZvSQxLvgp5dI$5081986e47877e18988a62f6bbec2d4362f34d37ad31d683715ebc34ef48933f9ce2f3b1fc645dcec1461f7510f79bbc2f80ec4425ee961dc1c5220bcc5a0b2b', 'customer', '+1-555-0201'),
+('Bob Martinez (Customer)', 'bob@customer.com', 'scrypt:32768:8:1$Pb8NZvSQxLvgp5dI$5081986e47877e18988a62f6bbec2d4362f34d37ad31d683715ebc34ef48933f9ce2f3b1fc645dcec1461f7510f79bbc2f80ec4425ee961dc1c5220bcc5a0b2b', 'customer', '+1-555-0202'),
+('Charlie Brown (Customer)', 'charlie@customer.com', 'scrypt:32768:8:1$Pb8NZvSQxLvgp5dI$5081986e47877e18988a62f6bbec2d4362f34d37ad31d683715ebc34ef48933f9ce2f3b1fc645dcec1461f7510f79bbc2f80ec4425ee961dc1c5220bcc5a0b2b', 'customer', '+1-555-0203')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 

@@ -27,6 +27,9 @@ def get_assigned_tickets():
             t.status_id,
             s.status_name,
             s.is_closed,
+            t.assigned_agent_id,
+            COALESCE(a.name, 'Unassigned') AS agent_name,
+            COALESCE(a.email, 'N/A') AS agent_email,
             t.subject,
             t.description,
             t.created_at,
@@ -39,8 +42,9 @@ def get_assigned_tickets():
         JOIN Categories cat ON t.category_id = cat.category_id
         JOIN Priorities p ON t.priority_id = p.priority_id
         JOIN Ticket_Status s ON t.status_id = s.status_id
+        LEFT JOIN Users a ON t.assigned_agent_id = a.user_id
     """
-    scope = request.args.get('scope', 'all')
+    scope = request.args.get('scope', '').strip().lower()
     if scope == 'mine':
         sql += " WHERE t.assigned_agent_id = %s"
         params = [agent_id]
@@ -48,8 +52,8 @@ def get_assigned_tickets():
         sql += " WHERE t.assigned_agent_id IS NULL"
         params = []
     else:
-        sql += " WHERE (t.assigned_agent_id = %s OR t.assigned_agent_id IS NULL)"
-        params = [agent_id]
+        sql += " WHERE 1=1"
+        params = []
 
     if status_id:
         sql += " AND t.status_id = %s"
@@ -70,7 +74,54 @@ def get_assigned_tickets():
     sql += " ORDER BY p.sla_hours ASC, t.created_at ASC;"
 
     tickets = execute_query(sql, tuple(params))
-    return jsonify({'tickets': tickets, 'count': len(tickets)}), 200
+
+    # Calculate real-time database KPIs
+    kpi_sql = """
+        SELECT 
+            COUNT(t.ticket_id) AS total_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'open' THEN 1 ELSE 0 END) AS open_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'in progress' THEN 1 ELSE 0 END) AS in_progress_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'resolved' THEN 1 ELSE 0 END) AS resolved_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'closed' THEN 1 ELSE 0 END) AS closed_tickets,
+            SUM(CASE WHEN t.assigned_agent_id IS NOT NULL THEN 1 ELSE 0 END) AS assigned_tickets,
+            SUM(CASE WHEN t.assigned_agent_id IS NULL THEN 1 ELSE 0 END) AS unassigned_tickets,
+            SUM(CASE WHEN s.is_closed = FALSE AND TIMESTAMPDIFF(HOUR, t.created_at, NOW()) > p.sla_hours THEN 1 ELSE 0 END) AS sla_breached_count
+        FROM Tickets t
+        JOIN Ticket_Status s ON t.status_id = s.status_id
+        JOIN Priorities p ON t.priority_id = p.priority_id;
+    """
+    kpis = execute_single(kpi_sql) or {}
+
+    agent_kpi_sql = """
+        SELECT 
+            SUM(CASE WHEN t.assigned_agent_id = %s THEN 1 ELSE 0 END) AS my_assigned_tickets,
+            SUM(CASE WHEN t.assigned_agent_id = %s AND LOWER(s.status_name) = 'in progress' THEN 1 ELSE 0 END) AS my_in_progress_tickets,
+            SUM(CASE WHEN t.assigned_agent_id = %s AND LOWER(s.status_name) IN ('resolved', 'closed') THEN 1 ELSE 0 END) AS my_resolved_tickets
+        FROM Tickets t
+        JOIN Ticket_Status s ON t.status_id = s.status_id;
+    """
+    agent_kpis = execute_single(agent_kpi_sql, (agent_id, agent_id, agent_id)) or {}
+
+    stats = {
+        'total_tickets': int(kpis.get('total_tickets') or 0),
+        'open_tickets': int(kpis.get('open_tickets') or 0),
+        'in_progress_tickets': int(kpis.get('in_progress_tickets') or 0),
+        'resolved_tickets': int(kpis.get('resolved_tickets') or 0),
+        'closed_tickets': int(kpis.get('closed_tickets') or 0),
+        'assigned_tickets': int(kpis.get('assigned_tickets') or 0),
+        'unassigned_tickets': int(kpis.get('unassigned_tickets') or 0),
+        'sla_breached_count': int(kpis.get('sla_breached_count') or 0),
+        'my_assigned_tickets': int(agent_kpis.get('my_assigned_tickets') or 0),
+        'my_in_progress_tickets': int(agent_kpis.get('my_in_progress_tickets') or 0),
+        'my_resolved_tickets': int(agent_kpis.get('my_resolved_tickets') or 0),
+    }
+
+    return jsonify({
+        'tickets': tickets,
+        'count': len(tickets),
+        'kpis': stats,
+        'stats': stats
+    }), 200
 
 def get_agent_ticket_details(ticket_id):
     """
@@ -84,6 +135,7 @@ def get_agent_ticket_details(ticket_id):
             c.name AS customer_name,
             c.email AS customer_email,
             c.contact_number AS customer_contact,
+            c.contact_number AS customer_phone,
             t.category_id,
             cat.category_name,
             t.priority_id,
@@ -122,7 +174,9 @@ def get_agent_ticket_details(ticket_id):
             tc.comment_id,
             tc.user_id,
             u.name AS commenter_name,
+            u.name AS author_name,
             u.role AS commenter_role,
+            u.role AS author_role,
             tc.comment_text,
             tc.is_internal,
             tc.created_at
@@ -167,7 +221,11 @@ def update_ticket_status(ticket_id):
     status_name_input = data.get('status_name')
 
     if not new_status_id and status_name_input:
-        st_lookup = execute_single("SELECT status_id FROM Ticket_Status WHERE LOWER(status_name) = LOWER(%s);", (status_name_input,))
+        normalized = status_name_input.strip().replace('_', ' ').lower()
+        st_lookup = execute_single(
+            "SELECT status_id, status_name FROM Ticket_Status WHERE LOWER(status_name) = %s;",
+            (normalized,)
+        )
         if st_lookup:
             new_status_id = st_lookup['status_id']
 
@@ -205,7 +263,7 @@ def resolve_ticket(ticket_id):
     """
     agent_id = session.get('user_id')
     data = request.get_json() or {}
-    resolution_notes = (data.get('resolution_notes') or '').strip()
+    resolution_notes = (data.get('resolution_notes') or data.get('resolution_summary') or '').strip()
 
     status_row = execute_single("SELECT status_id FROM Ticket_Status WHERE status_name = 'Resolved';")
     resolved_status_id = status_row['status_id'] if status_row else 3
@@ -285,12 +343,60 @@ def claim_ticket(ticket_id):
 
         return jsonify({
             'success': True,
-            'message': f'Ticket #{ticket_id} claimed successfully and moved to In Progress.',
+            'message': f'Ticket #{ticket_id} assigned successfully and moved to In Progress.',
             'ticket_id': ticket_id,
             'assigned_agent_id': agent_id
         }), 200
 
     except Exception as e:
         return jsonify({'error': f'Failed to claim ticket: {str(e)}'}), 500
+
+def get_agent_dashboard_stats():
+    """
+    Returns real-time MySQL database statistics for the Agent Dashboard:
+    Total, Open, In Progress, Resolved, Closed, Assigned, Unassigned,
+    and agent-specific metrics.
+    """
+    agent_id = session.get('user_id')
+    kpi_sql = """
+        SELECT 
+            COUNT(t.ticket_id) AS total_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'open' THEN 1 ELSE 0 END) AS open_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'in progress' THEN 1 ELSE 0 END) AS in_progress_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'resolved' THEN 1 ELSE 0 END) AS resolved_tickets,
+            SUM(CASE WHEN LOWER(s.status_name) = 'closed' THEN 1 ELSE 0 END) AS closed_tickets,
+            SUM(CASE WHEN t.assigned_agent_id IS NOT NULL THEN 1 ELSE 0 END) AS assigned_tickets,
+            SUM(CASE WHEN t.assigned_agent_id IS NULL THEN 1 ELSE 0 END) AS unassigned_tickets,
+            SUM(CASE WHEN s.is_closed = FALSE AND TIMESTAMPDIFF(HOUR, t.created_at, NOW()) > p.sla_hours THEN 1 ELSE 0 END) AS sla_breached_count
+        FROM Tickets t
+        JOIN Ticket_Status s ON t.status_id = s.status_id
+        JOIN Priorities p ON t.priority_id = p.priority_id;
+    """
+    kpis = execute_single(kpi_sql) or {}
+
+    agent_kpi_sql = """
+        SELECT 
+            SUM(CASE WHEN t.assigned_agent_id = %s THEN 1 ELSE 0 END) AS my_assigned_tickets,
+            SUM(CASE WHEN t.assigned_agent_id = %s AND LOWER(s.status_name) = 'in progress' THEN 1 ELSE 0 END) AS my_in_progress_tickets,
+            SUM(CASE WHEN t.assigned_agent_id = %s AND LOWER(s.status_name) IN ('resolved', 'closed') THEN 1 ELSE 0 END) AS my_resolved_tickets
+        FROM Tickets t
+        JOIN Ticket_Status s ON t.status_id = s.status_id;
+    """
+    agent_kpis = execute_single(agent_kpi_sql, (agent_id, agent_id, agent_id)) or {}
+
+    stats = {
+        'total_tickets': int(kpis.get('total_tickets') or 0),
+        'open_tickets': int(kpis.get('open_tickets') or 0),
+        'in_progress_tickets': int(kpis.get('in_progress_tickets') or 0),
+        'resolved_tickets': int(kpis.get('resolved_tickets') or 0),
+        'closed_tickets': int(kpis.get('closed_tickets') or 0),
+        'assigned_tickets': int(kpis.get('assigned_tickets') or 0),
+        'unassigned_tickets': int(kpis.get('unassigned_tickets') or 0),
+        'sla_breached_count': int(kpis.get('sla_breached_count') or 0),
+        'my_assigned_tickets': int(agent_kpis.get('my_assigned_tickets') or 0),
+        'my_in_progress_tickets': int(agent_kpis.get('my_in_progress_tickets') or 0),
+        'my_resolved_tickets': int(agent_kpis.get('my_resolved_tickets') or 0),
+    }
+    return jsonify({'kpis': stats, **stats}), 200
 
 

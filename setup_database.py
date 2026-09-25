@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 base_dir = Path(__file__).resolve().parent
-load_dotenv(base_dir / ".env")
+load_dotenv(base_dir / ".env", override=True)
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", 3306))

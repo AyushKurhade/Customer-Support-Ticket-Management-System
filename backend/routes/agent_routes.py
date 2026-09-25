@@ -6,7 +6,8 @@ from backend.controllers.agent_controller import (
     update_ticket_status,
     resolve_ticket,
     add_agent_comment,
-    claim_ticket
+    claim_ticket,
+    get_agent_dashboard_stats
 )
 
 agent_bp = Blueprint('agent_bp', __name__, url_prefix='/api/agent')
@@ -18,4 +19,8 @@ agent_bp.add_url_rule('/tickets/<int:ticket_id>/status', view_func=role_required
 agent_bp.add_url_rule('/tickets/<int:ticket_id>/resolve', view_func=role_required(['agent', 'admin'])(resolve_ticket), methods=['POST'])
 agent_bp.add_url_rule('/tickets/<int:ticket_id>/comments', view_func=role_required(['agent', 'admin'])(add_agent_comment), methods=['POST'])
 agent_bp.add_url_rule('/tickets/<int:ticket_id>/claim', view_func=role_required(['agent', 'admin'])(claim_ticket), methods=['POST'])
+agent_bp.add_url_rule('/stats', view_func=role_required(['agent', 'admin'])(get_agent_dashboard_stats), methods=['GET'])
+
+
+
 
