@@ -47,7 +47,7 @@ The system organizes support requests using categories, priorities, ticket statu
 | Database | MySQL 8.0 |
 | Backend | Python Flask |
 | AI/DS Component | Ticket Classification |
-| Academic Year | 2025–2026 |
+| Academic Year | 2026–2027 |
 
 ---
 
