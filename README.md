@@ -350,8 +350,6 @@ Charts can be used to display ticket status distribution, category-wise ticket c
 ### 🖼️ Screen 12 — Dashboard Analytics & Agent Performance
 ![Screen 12](frontend/assets/s12.png)
 
-### 🖼️ Screen 13 — Dashboard Analytics & Recent Tickets
-![Screen 13](frontend/assets/s13.png)
 
 ---
 
